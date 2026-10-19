@@ -39,7 +39,7 @@ def add_workflow_commands(sub):
     ts = t.add_subparsers(dest="action", required=True)
     a = ts.add_parser("add")
     a.add_argument("title")
-    a.add_argument("--account", required=True, help="id, slug or name")
+    a.add_argument("--account", help="id, slug or name (or give --contact)")
     a.add_argument("--contact")
     a.add_argument("--kind", choices=sorted(TICKET_KINDS), default="bug")
     a.add_argument("--severity", choices=sorted(SEVERITIES), default="normal")
@@ -120,7 +120,14 @@ def add_workflow_commands(sub):
 
 def _ticket(store, args):
     if args.action == "add":
-        account = store.find_account(args.account)
+        if not (args.account or args.contact):
+            raise CRMError("Give --account or --contact.")
+        contact = store.find_contact(args.contact) if args.contact else None
+        account = (
+            store.find_account(args.account)
+            if args.account
+            else store.find_account(contact["account_id"])
+        )
         fields = {
             "kind": args.kind,
             "severity": args.severity,
@@ -133,8 +140,8 @@ def _ticket(store, args):
             "next_action_date": args.due,
             "reported_at": args.reported_at,
         }
-        if args.contact:
-            fields["contact_id"] = store.find_contact(args.contact)["id"]
+        if contact:
+            fields["contact_id"] = contact["id"]
         fields = {k: v for k, v in fields.items() if v is not None}
         extra = pairs(args.set)
         result = store.open_ticket(account["id"], args.title, **fields)
