@@ -1,0 +1,5 @@
+* text=auto
+# Unified diffs contain space-prefixed blank context lines by design.
+*.patch -whitespace
+*.png binary
+*.jpg binary

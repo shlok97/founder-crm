@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "founder-crm": {
+      "command": "/absolute/path/to/founder-crm/.venv/bin/founder-crm",
+      "args": ["--db", "/absolute/path/to/founder-crm/data/crm.db", "mcp"]
+    }
+  }
+}
