@@ -37,6 +37,16 @@ deleting it in a later commit does not make that history publishable. It checks
 common credential patterns; it is not a complete secret or privacy detector.
 Review your diff and keep runtime data under ignored `data/`.
 
+If you run a real workspace beside this checkout, point the check at it once per clone:
+
+```sh
+git config founder-crm.privateDb /absolute/path/to/your/crm.db
+```
+
+The check then also refuses any public file or outgoing commit that contains one of
+your own relationship names, contact names or contact emails (internal accounts are
+skipped). It reports the file path only, never the match.
+
 GitHub Actions installs the actual package after creating demo data, checks its
 schema/static resources, runs the base suite from outside the checkout, and tests
 the browser JavaScript. Check that the run is green before announcing an

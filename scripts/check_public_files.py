@@ -19,8 +19,43 @@ PATTERNS = {
 }
 
 
+def private_terms():
+    """Names and emails from your own CRM database, to keep out of the public repo.
+
+    Opt in per clone: git config founder-crm.privateDb /absolute/path/to/crm.db
+    Internal accounts (your own team) are skipped; names shorter than five
+    characters are too likely to match ordinary words."""
+    try:
+        path = subprocess.run(["git", "config", "--get", "founder-crm.privateDb"], cwd=ROOT,
+                              capture_output=True, text=True).stdout.strip()
+    except OSError:
+        return None
+    if not path:
+        return None
+    import sqlite3
+
+    if not Path(path).is_file():
+        raise SystemExit(f"founder-crm.privateDb is set but {path} does not exist.")
+    c = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+    rows = c.execute(
+        "SELECT a.name FROM accounts a WHERE a.lifecycle<>'internal'"
+        " UNION SELECT p.name FROM contacts p JOIN accounts a ON a.id=p.account_id WHERE a.lifecycle<>'internal'"
+        " UNION SELECT p.email FROM contacts p JOIN accounts a ON a.id=p.account_id WHERE a.lifecycle<>'internal' AND p.email IS NOT NULL"
+    ).fetchall()
+    c.close()
+    terms = sorted({r[0].strip() for r in rows if r[0] and len(r[0].strip()) >= 5})
+    if not terms:
+        return None
+    return re.compile(
+        r"(?<![\w@.])(?:" + "|".join(re.escape(t) for t in terms) + r")(?![\w@])", re.IGNORECASE
+    )
+
+
 def check():
     errors = []
+    terms = private_terms()
+    if terms:
+        PATTERNS["record from your private CRM"] = terms
     if len(FILES) != len(set(FILES)):
         errors.append("Duplicate entries in source allowlist.")
     for name in FILES:
