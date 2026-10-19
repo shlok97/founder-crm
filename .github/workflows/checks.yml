@@ -29,8 +29,3 @@ jobs:
           python -m unittest discover -s tests -v
       - name: Check browser JavaScript
         run: node --check founder_crm/static/app.js
-      - name: Test reviewed personalisation example
-        run: |
-          git apply --check docs/examples/agency-owner.patch
-          git apply docs/examples/agency-owner.patch
-          python -m unittest discover -s tests -v

@@ -419,7 +419,7 @@ h3 {
 }
 .pipeline {
   display: grid;
-  grid-template-columns: repeat(6, minmax(140px, 1fr));
+  grid-template-columns: repeat(9, minmax(140px, 1fr));
   gap: 10px;
   overflow-x: auto;
   padding-bottom: 15px;
@@ -544,6 +544,38 @@ pre {
   overflow-wrap: anywhere;
   color: var(--secondary);
   font: 11px/1.8 var(--mono);
+}
+.kv {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.6fr) 1.4fr;
+  gap: 6px 18px;
+  font-size: 12px;
+  margin: 8px 0;
+}
+.kv dt {
+  color: var(--muted);
+}
+.kv dd {
+  margin: 0;
+  color: var(--secondary);
+  overflow-wrap: anywhere;
+}
+.meter {
+  height: 4px;
+  background: var(--line);
+  margin-top: 8px;
+  width: 120px;
+}
+.meter span {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
+ol.steps {
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--secondary);
+  line-height: 1.8;
 }
 .hint {
   font-size: 12px;

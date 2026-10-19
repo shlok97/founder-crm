@@ -1,5 +1,9 @@
 # Verification · 19 October 2026
 
+## Version 0.2 (schema v2)
+
+52 tests pass, including a v1-to-v2 upgrade of a populated database (rows, values and references kept, backup written, second run a no-op), the ticket fix/close/told loop with attested and Gmail-verified notifications, qualification completeness with custom questions, and custom-field type checks. A v1 demo database built from 0.1.1 upgraded with identical row counts per table. The dashboard's Tickets, Qualification and Make it yours views were exercised in a browser on fictional demo data with no console errors.
+
 The starter is published on GitHub. See [the expanded release review](release-review.md) for the latest 45 base / 50 customised checks. The original checks below are retained as dated evidence. External services are opt-in; the verification below does not establish live mailbox, form delivery or Jev accuracy. The source release contains generalised workflow lessons and fictional demo records.
 
 ## Automated checks

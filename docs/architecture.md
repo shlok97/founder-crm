@@ -34,7 +34,11 @@ erDiagram
   proposals o|--o| tickets : opens
 ```
 
-Relationship (`customer`, `investor`, `vendor`, etc.) is distinct from lifecycle (`new`, `pilot`, `active`, etc.) and opportunity stage. Only customer/prospect accounts can enter the sales pipeline. Ticket fix and notification timestamps are separate.
+Relationship (`customer`, `investor`, `vendor`, etc.) is distinct from lifecycle (`new`, `pilot`, `active`, etc.) and opportunity stage. Only customer/prospect accounts can enter the sales pipeline. Ticket fix, close and notification timestamps are separate. A notification records how the customer was told and whether it was a Gmail-verified sent message or a person's own record.
+
+Schema v2 adds `qualification` and `qualification_evidence` (one dossier per account; completeness counts the built-in questions plus account custom fields marked as qualification questions), `sources`, `events` and `event_contacts`, `field_definitions` and `custom_values` (typed custom fields on any record), and `import_ids` (where an imported record came from, for idempotent imports). Interactions carry `occurred_at`, `kind` and `channel` as well as the time they were written down.
+
+People write directly through the dashboard and CLI, with an audit row per change. Email, forms and Claude still go through proposals and human approval.
 
 Intake deduplicates on `(source, external_id)`. Email contact matching is exact and case-insensitive; unknown senders remain unmatched. This starter does not infer company identity from domains or create contacts from messages. Link a contact before pulling a message when you need an automatic match. Already captured evidence is not silently rewritten.
 

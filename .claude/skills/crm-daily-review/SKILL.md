@@ -3,7 +3,7 @@ name: crm-daily-review
 description: Review Founder CRM for owed replies, due next steps, stalled opportunities and fixes awaiting customer notification. Use for a daily relationship review, not general email summarization.
 ---
 
-Read `crm_dashboard` through the connected Founder CRM MCP server. Use the actual dates and statuses in its result. Separate overdue dated tasks, undated tasks, pending proposals, and fixed tickets with no notification evidence. Missing notification evidence means no recorded proof, not certainty that the customer was never told.
+Read `crm_dashboard` through the connected Founder CRM MCP server, plus `crm_followups` for every dated next step and `crm_untold` for fixed or closed tickets whose customer has not been told. Use the actual dates and statuses in its result. Separate overdue dated tasks, undated tasks, pending proposals, and fixed tickets with no notification evidence. Missing notification evidence means no recorded proof, not certainty that the customer was never told.
 
 Read an account's history when deciding why it needs attention. An investor, partner or vendor may deserve a follow-up without being a sales opportunity. Do not equate account relationship, lifecycle and opportunity stage.
 

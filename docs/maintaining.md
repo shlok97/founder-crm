@@ -39,7 +39,7 @@ Review your diff and keep runtime data under ignored `data/`.
 
 GitHub Actions installs the actual package after creating demo data, checks its
 schema/static resources, runs the base suite from outside the checkout, and tests
-the reviewed agency extension. Check that the run is green before announcing an
+the browser JavaScript. Check that the run is green before announcing an
 update. Never force-push to work around an unexpected remote change.
 
 The source ZIP is optional: `python scripts/package_release.py`. Its allowlist is

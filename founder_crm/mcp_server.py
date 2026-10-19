@@ -30,6 +30,36 @@ def create_mcp(store=None):
         return store.account_history(account_id)
 
     @mcp.tool()
+    def crm_tickets(include_closed: bool = False) -> list:
+        """Read customer tickets, worst first: severity, status, what they said, next step."""
+        return store.tickets(include_closed)
+
+    @mcp.tool()
+    def crm_untold() -> list:
+        """Read tickets that are fixed or closed but whose customer has not been told."""
+        return store.untold()
+
+    @mcp.tool()
+    def crm_followups() -> list:
+        """Read every dated next step: tasks, opportunities, relationships and tickets."""
+        return store.followups()
+
+    @mcp.tool()
+    def crm_qualification(account_id: int) -> dict:
+        """Read an account's qualification answers, evidence and completeness."""
+        return store.qualification(account_id)
+
+    @mcp.tool()
+    def crm_qualification_gaps() -> list:
+        """Read buyers still missing qualification answers, customers and pilots first."""
+        return store.qualification_gaps()
+
+    @mcp.tool()
+    def crm_custom_fields() -> list:
+        """Read this workspace's custom field definitions."""
+        return store.fields()
+
+    @mcp.tool()
     def crm_intake_note(
         external_id: str, subject: str, body: str, sender: str = ""
     ) -> dict:

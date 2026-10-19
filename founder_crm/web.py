@@ -71,6 +71,8 @@ def make_server(store, port=4780):
                     return self.send(200, data)
                 if path.startswith("/api/proposals/"):
                     return self.send(200, store.proposal(int(path.split("/")[-1])))
+                if path.startswith("/api/tickets/"):
+                    return self.send(200, store.ticket(int(path.split("/")[-1])))
                 if path.startswith("/api/accounts/"):
                     return self.send(
                         200, store.account_history(int(path.split("/")[-1]))
@@ -121,6 +123,9 @@ def make_server(store, port=4780):
                 data = json.loads(self.rfile.read(size))
                 if not isinstance(data, dict):
                     raise CRMError("Expected a JSON object.")
+                if not hook:
+                    # The dashboard is the person; an audit actor is never taken from the request.
+                    data.pop("actor", None)
                 if hook:
                     result = receive_web3forms(store, data)
                 elif path == "/api/accounts":
@@ -129,6 +134,27 @@ def make_server(store, port=4780):
                     result = store.add_contact(**data)
                 elif path == "/api/opportunities":
                     result = store.add_opportunity(**data)
+                elif path == "/api/records":
+                    result = store.update_record(
+                        data["object_type"], data["id"], **data.get("values", {})
+                    )
+                elif path == "/api/interactions":
+                    result = store.log_interaction(**data)
+                elif path == "/api/tickets":
+                    result = store.open_ticket(**data)
+                elif path == "/api/ticket-status":
+                    result = store.set_ticket_status(**data)
+                elif path == "/api/ticket-notify":
+                    allowed = {"id", "via", "note", "at", "contact_id"}
+                    if data.keys() - allowed:
+                        raise CRMError("Unsupported notification fields.")
+                    result = store.notify_ticket(**data)
+                elif path == "/api/qualification":
+                    result = store.set_qualification(**data)
+                elif path == "/api/evidence":
+                    result = store.add_evidence(**data)
+                elif path == "/api/fields":
+                    result = store.define_field(**data)
                 elif path == "/api/intake":
                     allowed = {"external_id", "subject", "sender", "body", "direction"}
                     if data.keys() - allowed:

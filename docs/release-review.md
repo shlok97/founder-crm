@@ -30,7 +30,7 @@ a hosted CRM or a verified live-mailbox deployment.
 | Jev | Native request structure for TypeSafe and OpenRouter; valid response, 401/429/malformed failures; always advisory | Operator's own key and enabled model sharing; live response and accuracy are unmeasured |
 | Personalisation | Reviewed account-owner extension, migration tests and existing MCP/browser checks | Each further client-specific change still needs review |
 
-The expanded base suite has **45 tests**, and the reviewed extension adds five.
+The expanded base suite had **45 tests**, and the reviewed extension added five. Version 0.2 has 52 base tests; the owner extension is now built in.
 The integration tests make no external model requests, import no private records
 and incur no model cost. The human approval boundary remains intact.
 

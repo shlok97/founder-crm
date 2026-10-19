@@ -141,6 +141,21 @@ const heads = {
     "What’s moving forward?",
     "Sales opportunities stay separate from your other relationships.",
   ],
+  tickets: [
+    "WHAT CUSTOMERS ARE WAITING ON",
+    "Close every loop.",
+    "A ticket stays open until it is fixed, and a fix is not delivered until the customer is told.",
+  ],
+  qualify: [
+    "QUALIFICATION",
+    "Who can buy, and why?",
+    "The questions that decide whether an account can and will buy. Every claim keeps its source.",
+  ],
+  yours: [
+    "MAKE IT YOURS",
+    "Shape it to your business.",
+    "Add your own fields without a schema change, or ask Claude to change the app itself.",
+  ],
   integrations: [
     "BRING YOUR OWN TOOLS",
     "Connect the useful bits.",
@@ -162,6 +177,7 @@ function render() {
     : "YOUR WORKSPACE";
   $("#intake-count").textContent = state.intake.length || "";
   $("#review-count").textContent = state.proposals.length || "";
+  $("#untold-count").textContent = state.untold.length || "";
   document
     .querySelectorAll("[data-view]")
     .forEach((e) => e.classList.toggle("active", e.dataset.view === view));
@@ -171,10 +187,7 @@ function render() {
     [state.tasks.length, "Open next steps"],
     [state.proposals.length, "Updates to review"],
     [state.counts.contacts, "People in the story"],
-    [
-      state.tickets.filter((t) => t.fixed_at && !t.notified_at).length,
-      "Fixed, update still owed",
-    ],
+    [state.untold.length, "Fixed, update still owed"],
   ]) {
     add(
       stats,
@@ -194,6 +207,9 @@ function render() {
     people: renderPeople,
     pipeline: renderPipeline,
     integrations: renderConnections,
+    tickets: renderTickets,
+    qualify: renderQualify,
+    yours: renderYours,
   })[view](c);
 }
 function renderToday(c) {
@@ -231,12 +247,29 @@ function renderToday(c) {
       due,
     );
   }
+  const dated = state.followups.filter((f) => f.kind !== "task");
+  label(left, "DATED NEXT STEPS", `${dated.length}`);
+  if (!dated.length) empty(left, "No dated next steps on relationships, deals or tickets.");
+  for (const f of dated.slice(0, 25)) {
+    const due = node(
+      "span",
+      "due" + (f.due && f.due < today ? " late" : ""),
+      f.due || "No date",
+    );
+    const r = row(left, f.next_action || f.what, `${f.account_name} · ${f.what}`, null, due);
+    r.prepend(tag(f.kind, "gray"));
+  }
   label(left, "CLOSE THE LOOP");
-  const owed = state.tickets.filter((t) => t.fixed_at && !t.notified_at);
-  if (!owed.length)
+  if (!state.untold.length)
     empty(left, "No recorded fixes are waiting for a client update.");
-  for (const t of owed)
-    row(left, t.title, t.account_name, null, tag("UPDATE OWED", "amber"));
+  for (const t of state.untold)
+    row(
+      left,
+      t.title,
+      `${t.account_name} · ${t.resolution || t.status}`,
+      button("Record update", () => notifyForm(t)),
+      tag("UPDATE OWED", "amber"),
+    );
   label(right, "HOW A MEMORY BECOMES AN UPDATE");
   const panel = node("div", "panel");
   add(
@@ -516,21 +549,342 @@ function renderPeople(c) {
   search.oninput = paint;
   paint();
 }
+function details(parent, pairs) {
+  const dl = node("dl", "kv");
+  for (const [k, v] of pairs) {
+    if (v === null || v === undefined || v === "" || v === "[]") continue;
+    add(dl, node("dt", "", k), node("dd", "", typeof v === "object" ? JSON.stringify(v) : String(v)));
+  }
+  if (dl.children.length) parent.append(dl);
+  return dl;
+}
+function fieldLabel(type, key) {
+  return state.fields.find((f) => f.object_type === type && f.key === key)?.label || key;
+}
 async function history(id) {
   const a = await api("accounts/" + id),
     p = open(a.name);
-  add(p, tag(a.relationship), node("p", "hint", a.lifecycle));
+  add(p, tag(a.relationship), node("p", "hint", `${a.lifecycle}${a.segment ? " · " + a.segment : ""}`));
+  details(p, [
+    ["Next step", a.next_action && `${a.next_action} (${a.next_action_date || "no date"})`],
+    ["Owner", a.owner],
+    ["Tier", a.tier],
+    ["Website", a.website],
+    ["Location", [a.city, a.region, a.country].filter(Boolean).join(", ")],
+    ["Source", a.source_detail],
+    ["Tags", JSON.parse(a.tags || "[]").join(", ")],
+    ["Notes", a.notes],
+    ...Object.entries(a.custom).map(([k, v]) => [fieldLabel("account", k), v]),
+  ]);
+  const q = a.qualification.status;
+  label(p, "QUALIFICATION", `${q.pct}% · ${q.status.replace("_", " ")}`);
+  p.append(button("Open qualification", () => qualifyDialog(id)));
   label(p, "CONTACTS");
   for (const person of a.contacts)
-    row(p, person.name, person.email || "No email recorded");
+    row(
+      p,
+      person.name,
+      [person.title, person.email, person.phone || person.whatsapp].filter(Boolean).join(" · ") ||
+        "No email recorded",
+    );
   p.append(button("+ Add contact", () => contactForm(id)));
+  label(p, "TICKETS", `${a.tickets.length}`);
+  for (const t of a.tickets)
+    row(p, `#${t.id} ${t.title}`, `${t.severity} · ${t.status}${t.notified_at ? " · customer told" : ""}`, button("Open", () => ticketDialog(t.id)));
+  p.append(button("+ New ticket", () => ticketForm(id)));
+  if (a.opportunities.length) {
+    label(p, "OPPORTUNITIES");
+    for (const o of a.opportunities)
+      row(p, o.title, [o.stage, o.value && `${o.value} ${o.currency || ""}`, o.next_action].filter(Boolean).join(" · "));
+  }
   label(p, "RELATIONSHIP HISTORY");
   if (!a.interactions.length) empty(p, "No interactions recorded yet.");
   for (const i of a.interactions)
-    row(p, i.summary, `${i.direction} · ${i.created_at}`);
+    row(
+      p,
+      i.summary,
+      [i.kind.replaceAll("_", " "), i.channel, i.direction, i.occurred_at || i.created_at]
+        .filter(Boolean)
+        .join(" · "),
+    );
   label(p, "NEXT STEPS");
   for (const t of a.tasks)
     row(p, t.title, `${t.status} · ${t.due_date || "No date"}`);
+}
+function choices(values) {
+  return values.map((v) => [v, v.replaceAll("_", " ")]);
+}
+const CHANNELS = ["whatsapp", "email", "call", "in_person", "video", "linkedin", "app", "chat", "sms", "internal", "other"];
+function renderTickets(c) {
+  const top = label(c, "OPEN TICKETS", "WORST FIRST");
+  top.append(button("+ New ticket", () => ticketForm()));
+  const open = state.tickets.filter((t) => !["closed", "wont_do", "duplicate"].includes(t.status));
+  if (!open.length) empty(c, "No open tickets.", "Log what a customer reports so it cannot slip.");
+  for (const t of open) {
+    const r = row(
+      c,
+      `#${t.id} ${t.title}`,
+      [t.account_name, t.status.replaceAll("_", " "), t.kind.replaceAll("_", " "), t.next_action].filter(Boolean).join(" · "),
+      button("Open", () => ticketDialog(t.id)),
+      t.next_action_date ? node("span", "due", t.next_action_date) : null,
+    );
+    r.prepend(tag(t.severity, ["blocker", "high"].includes(t.severity) ? "amber" : "gray"));
+  }
+  label(c, "FIXED, CUSTOMER NOT TOLD", `${state.untold.length}`);
+  if (!state.untold.length) empty(c, "Every fix has been told to its customer.");
+  for (const t of state.untold)
+    row(c, `#${t.id} ${t.title}`, `${t.account_name} · ${t.resolution || t.status}`, button("Record update", () => notifyForm(t)), tag("UPDATE OWED", "amber"));
+}
+function ticketForm(accountId) {
+  const p = open("Log a customer ticket");
+  const a = select(p, "Relationship", [["", "Choose a relationship"], ...state.accounts.map((x) => [x.id, x.name])]);
+  if (accountId) a.value = accountId;
+  const title = field(p, "What is wrong or wanted?"),
+    kind = select(p, "Kind", choices(["bug", "data_defect", "feature_request", "question", "performance", "access", "billing", "onboarding", "other"])),
+    severity = select(p, "Severity", choices(["normal", "high", "blocker", "low"])),
+    via = select(p, "Reported via", [["", "Unknown"], ...choices(CHANNELS)]),
+    body = field(p, "What they said, verbatim where you have it", "textarea"),
+    next = field(p, "Next action"),
+    due = field(p, "Next action date", "date");
+  add(
+    p,
+    add(
+      node("div", "actions"),
+      button(
+        "Open ticket",
+        async () => {
+          if (!a.value) throw new Error("Choose the relationship that reported this.");
+          const data = { account_id: Number(a.value), title: title.value, kind: kind.value, severity: severity.value };
+          if (via.value) data.reported_via = via.value;
+          if (body.value) data.body = body.value;
+          if (next.value) data.next_action = next.value;
+          if (due.value) data.next_action_date = due.value;
+          await api("tickets", data);
+          close();
+          view = "tickets";
+          await refresh();
+          toast("Ticket opened and the report logged on the timeline.");
+        },
+        "button primary",
+      ),
+    ),
+  );
+}
+async function ticketDialog(id) {
+  const t = await api("tickets/" + id),
+    p = open(`Ticket #${id}`);
+  add(p, tag(t.severity, ["blocker", "high"].includes(t.severity) ? "amber" : "gray"), tag(t.status.replaceAll("_", " "), "gray"), node("h3", "", t.title));
+  details(p, [
+    ["Relationship", t.account_name],
+    ["Kind", t.kind],
+    ["Area", t.area],
+    ["Reported", [t.reported_at, t.reported_via].filter(Boolean).join(" via ")],
+    ["Expected", t.expected],
+    ["Next step", t.next_action && `${t.next_action} (${t.next_action_date || "no date"})`],
+    ["Owner", t.owner],
+    ["Resolution", t.resolution],
+    ["Release", t.release_ref],
+    ["Commit", t.commit_ref],
+    ["Evidence", t.evidence],
+    ["Fixed", t.fixed_at],
+    ["Closed", t.closed_at],
+    ["Customer told", t.notified_at && `${t.notified_at} via ${t.notified_via || "?"}${t.notification_verified ? " (verified sent mail)" : " (recorded by a person)"}`],
+    ["What they were told", t.notified_note],
+    ...Object.entries(t.custom).map(([k, v]) => [fieldLabel("ticket", k), v]),
+  ]);
+  if (t.body) {
+    label(p, "WHAT THEY SAID");
+    p.append(node("div", "evidence", t.body));
+  }
+  label(p, "MOVE IT ALONG");
+  const status = select(p, "Status", choices(["open", "triaged", "in_progress", "waiting_on_client", "fixed", "closed", "wont_do", "duplicate"]));
+  status.value = t.status;
+  const resolution = field(p, "Resolution, in the customer's words", "text", t.resolution || ""),
+    release = field(p, "Release reference", "text", t.release_ref || ""),
+    evidence = field(p, "Evidence (link, report, query)", "text", t.evidence || "");
+  const actions = node("div", "actions");
+  add(
+    actions,
+    button("Save", async () => {
+      const values = {};
+      if (resolution.value !== (t.resolution || "")) values.resolution = resolution.value;
+      if (release.value !== (t.release_ref || "")) values.release_ref = release.value;
+      if (evidence.value !== (t.evidence || "")) values.evidence = evidence.value;
+      if (status.value !== t.status) await api("ticket-status", { id, status: status.value, ...values });
+      else if (Object.keys(values).length) await api("records", { object_type: "ticket", id, values });
+      await refresh();
+      await ticketDialog(id);
+      toast("Ticket saved.");
+    }, "button primary"),
+  );
+  if ((t.fixed_at || ["fixed", "closed"].includes(t.status)) && !t.notified_at)
+    actions.prepend(button("Record that you told them", () => notifyForm(t)));
+  p.append(actions);
+}
+function notifyForm(t) {
+  const p = open(`Told the customer: #${t.id}`);
+  p.append(node("p", "hint", "Record what you said and how. This is your own record, not a verified sent message; Gmail-sourced proposals are the verified path."));
+  const via = select(p, "How did you tell them?", choices(CHANNELS)),
+    note = field(p, "What you told them", "textarea"),
+    at = field(p, "When (blank = now)", "date");
+  add(
+    p,
+    add(
+      node("div", "actions"),
+      button(
+        "Record update",
+        async () => {
+          const data = { id: t.id, via: via.value, note: note.value };
+          if (at.value) data.at = at.value;
+          await api("ticket-notify", data);
+          close();
+          await refresh();
+          toast("Customer update recorded.");
+        },
+        "button primary",
+      ),
+    ),
+  );
+}
+function renderQualify(c) {
+  label(c, "STILL TO QUALIFY", `${state.qualification_gaps.length} BUYERS`);
+  if (!state.qualification_gaps.length) empty(c, "Every live buyer is fully qualified.");
+  for (const g of state.qualification_gaps) {
+    const meter = add(node("div", "meter"), node("span"));
+    meter.firstChild.style.width = g.pct + "%";
+    const r = row(
+      c,
+      g.name,
+      `${g.lifecycle} · ${g.status.replace("_", " ")} · missing ${g.missing.map((k) => questionLabel(k)).join(", ")}`,
+      button("Qualify", () => qualifyDialog(g.id)),
+      add(node("div", "row-meta", `${g.pct}%`), meter),
+    );
+    r.prepend(tag(g.confidence, "gray"));
+  }
+  c.append(node("p", "hint", "Unknown stays unknown: leave a field empty rather than guessing, so it stays in this queue. Add your own questions in Make it yours."));
+}
+function questionLabel(key) {
+  return { entity_type: "entity", team_size: "team size", current_tools: "tools", pain_points: "pain points", use_case: "use case", budget_authority: "budget", decision_process: "decision process", fit_score: "fit" }[key] || fieldLabel("account", key);
+}
+async function qualifyDialog(id) {
+  const account = await api("accounts/" + id),
+    q = account.qualification,
+    p = open(`Qualify ${account.name}`);
+  p.append(node("p", "hint", `${q.status.pct}% answered · ${q.status.status.replace("_", " ")}`));
+  const inputs = {};
+  for (const question of q.questions) {
+    const def = state.fields.find((f) => f.object_type === "account" && f.key === question.key);
+    if (def?.type === "choice") {
+      inputs[question.key] = select(p, question.label, [["", "Unknown"], ...def.choices.map((x) => [x, x])]);
+      inputs[question.key].value = question.value ?? "";
+    } else if (question.key === "budget_authority") {
+      inputs[question.key] = select(p, question.label, [["", "Unknown"], ...choices(["yes", "no", "influencer", "unknown"])]);
+      inputs[question.key].value = question.value ?? "";
+    } else inputs[question.key] = field(p, question.label, ["team_size", "fit_score"].includes(question.key) || ["number", "integer"].includes(def?.type) ? "number" : "text", question.value ?? "");
+  }
+  const confidence = select(p, "Your confidence in this dossier", choices(["low", "medium", "high"]));
+  confidence.value = q.record?.confidence || "low";
+  add(
+    p,
+    add(
+      node("div", "actions"),
+      button(
+        "Save answers",
+        async () => {
+          const values = { account_id: id, confidence: confidence.value };
+          for (const question of q.questions) {
+            const v = inputs[question.key].value;
+            if (String(v) !== String(question.value ?? "")) values[question.key] = v === "" ? null : ["team_size", "fit_score"].includes(question.key) ? Number(v) : v;
+          }
+          await api("qualification", values);
+          await refresh();
+          await qualifyDialog(id);
+          toast("Qualification saved.");
+        },
+        "button primary",
+      ),
+    ),
+  );
+  label(p, "EVIDENCE", `${q.evidence.length}`);
+  if (!q.evidence.length) empty(p, "No evidence recorded.", "A number with no source is a rumour.");
+  for (const e of q.evidence) row(p, e.claim, [e.source, e.observed_at, e.url].filter(Boolean).join(" · "));
+  const claim = field(p, "Claim"),
+    source = field(p, "Where it came from");
+  p.append(
+    add(
+      node("div", "actions"),
+      button("Add evidence", async () => {
+        await api("evidence", { account_id: id, claim: claim.value, source: source.value });
+        await qualifyDialog(id);
+      }),
+    ),
+  );
+}
+function renderYours(c) {
+  const cols = node("div", "two-col"),
+    left = node("div"),
+    right = node("div");
+  label(left, "YOUR FIELDS", `${state.fields.length} DEFINED`);
+  left.append(node("p", "hint", "Custom fields hold the data only your business needs, on relationships, contacts, opportunities, tickets, interactions or events. Mark an account field as a qualification question and it counts toward the Qualification queue."));
+  if (!state.fields.length) empty(left, "No custom fields yet.");
+  for (const f of state.fields) {
+    const r = row(left, f.label, `${f.object_type}.${f.key} · ${f.type}${f.choices ? " (" + f.choices.join(", ") + ")" : ""} · ${f.used} value${f.used === 1 ? "" : "s"}`);
+    r.prepend(tag(f.qualification ? "QUALIFICATION" : f.object_type, f.qualification ? "" : "gray"));
+  }
+  left.append(button("+ Define a field", fieldForm, "button primary"));
+  label(right, "HOW TO MAKE IT YOURS");
+  const panel = node("div", "panel");
+  const steps = node("ol", "steps");
+  for (const s of [
+    "Add a custom field here for anything your business tracks that others would not: a licence number, a plan tier, a region code.",
+    "Mark the account fields that decide whether someone can buy as qualification questions.",
+    "Use the CLI the same way: founder-crm field define account plan_tier \"Plan tier\" --type choice --choices free,team,enterprise",
+    "For a change to the app itself (a new view, a new rule, your own labels), open this folder in Claude Code and describe one concrete change. Keep human review and add tests.",
+    "Back up data/ before a schema change. Upgrades keep every row and write a backup first.",
+  ])
+    steps.append(node("li", "", s));
+  add(panel, node("div", "eyebrow", "FIELDS → QUESTIONS → CODE"), node("h2", "", "Start with data, then change the code."), steps);
+  right.append(panel);
+  label(right, "WHERE CHANGES BELONG");
+  details(right, [
+    ["Labels, layout, colours", "founder_crm/static/"],
+    ["A built-in field", "schema.sql + Store.init upgrade + core.py"],
+    ["A workflow or rule", "core.py, with a test in tests/"],
+    ["How Claude operates", ".claude/skills/ and CLAUDE.md"],
+    ["Guide", "docs/personalise.md"],
+  ]);
+  right.append(node("p", "hint", `Schema version ${state.schema_version}.`));
+  add(cols, left, right);
+  c.append(cols);
+}
+function fieldForm() {
+  const p = open("Define a custom field");
+  const type = select(p, "Record", choices(["account", "contact", "opportunity", "ticket", "interaction", "event"])),
+    key = field(p, "Key (lower_snake_case)"),
+    lab = field(p, "Label"),
+    kind = select(p, "Type", choices(["text", "number", "integer", "date", "boolean", "choice", "json"])),
+    opts = field(p, "Choices, comma separated (choice only)"),
+    qual = select(p, "Qualification question?", [["0", "No"], ["1", "Yes (account fields only)"]]),
+    help = field(p, "Help text (optional)");
+  add(
+    p,
+    add(
+      node("div", "actions"),
+      button(
+        "Define field",
+        async () => {
+          const data = { object_type: type.value, key: key.value, label: lab.value, type: kind.value, qualification: qual.value === "1" };
+          if (kind.value === "choice") data.choices = opts.value.split(",").map((s) => s.trim()).filter(Boolean);
+          if (help.value) data.help = help.value;
+          await api("fields", data);
+          close();
+          await refresh();
+          toast("Field defined.");
+        },
+        "button primary",
+      ),
+    ),
+  );
 }
 function renderPipeline(c) {
   const top = label(c, "CUSTOMER PIPELINE");
@@ -538,11 +892,14 @@ function renderPipeline(c) {
   const lanes = node("div", "pipeline");
   for (const stage of [
     "discovery",
+    "qualified",
     "demo",
     "pilot",
     "proposal",
+    "negotiation",
     "won",
     "lost",
+    "parked",
   ]) {
     const lane = node("div", "lane");
     lane.append(node("div", "lane-title", stage));
@@ -721,7 +1078,7 @@ function opportunityForm() {
     stage = select(
       p,
       "Stage",
-      ["discovery", "demo", "pilot", "proposal", "won", "lost"].map((s) => [
+      ["discovery", "qualified", "demo", "pilot", "proposal", "negotiation", "won", "lost", "parked"].map((s) => [
         s,
         s,
       ]),

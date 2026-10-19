@@ -40,10 +40,33 @@ Demo records live in `data/demo.db`; your empty workspace uses `data/crm.db`. Bo
 | Intake | Capture conversation notes and inspect imported messages or form submissions |
 | Review | Inspect source evidence, target records, proposed changes and optional Jev judgments; approve or reject |
 | Relationships | Keep customers, prospects, investors, partners and vendors distinct; inspect their history |
-| Pipeline | Track customer opportunities from discovery to won or lost |
+| Pipeline | Track customer opportunities from discovery to won, lost or parked, with value, probability and a dated next step |
+| Tickets | Log what a customer reports, move it to fixed and closed, and record when and how you told them |
+| Qualification | Answer whether an account can and will buy, with a source for every claim and a queue of the gaps |
 | Connections | Configure the optional integrations when you need them |
+| Make it yours | Define your own fields on any record and add your own qualification questions |
 
 An investor can need a follow-up without becoming a sales lead. A meeting under discussion is not a booked meeting. A deployed fix is not proof that the customer was told. Those distinctions are part of the model, rather than notes you have to remember.
+
+The same workflows run from the command line, which is how a Claude Code session or a script records things as they happen:
+
+```sh
+founder-crm ticket add "Export returns 504" --account "Paper Kite" \
+    --kind bug --severity high --via whatsapp --body "the export just spins" \
+    --next-action "raise the proxy timeout" --due 2026-10-25
+founder-crm tickets                    # open tickets, worst first
+founder-crm ticket close 12 --resolution "exports finish again" --release v1.4
+founder-crm untold                     # fixed or closed, customer not yet told
+founder-crm ticket notify 12 --via whatsapp --note "Told Sam exports work again"
+founder-crm followups                  # every dated next step in one list
+founder-crm qualify gaps               # buyers still missing qualification answers
+founder-crm qualify set "Paper Kite" team_size=4 fit_score=4 pain_points="manual reports"
+founder-crm qualify evidence "Paper Kite" "4 analysts" --source "call, 2026-10-01"
+founder-crm log call --account "Paper Kite" --summary "walked the export" --at 2026-10-18
+founder-crm show "Paper Kite"          # the whole record
+```
+
+Add `--db path/to/crm.db` to point at your workspace. A person recording "I told them on WhatsApp" is kept apart from a Gmail-verified sent message: both close the loop, and the record says which one it was.
 
 ## Use with Claude
 
@@ -55,7 +78,7 @@ Open this checkout in **Claude Code** and describe one concrete change:
 
 The project includes `CLAUDE.md`, operating rules and three skills for daily review, conversation capture and proposal review. Start with fictional records, inspect the changes, then try them in the browser.
 
-We tested the agency-owner customisation through Claude Code. The first pass needed an upgrade correction; the reviewed extension now passes 50 tests. [See the example and apply its patch](docs/personalisation-test.md), or read [more personalisation prompts](docs/personalise.md).
+We tested an agency-owner customisation through Claude Code on version 0.1.1; the first pass needed an upgrade correction. From 0.2 an owner is built in, so that patch is kept as a worked example rather than applied. [Read the example](docs/personalisation-test.md), [more personalisation prompts](docs/personalise.md), or [Make it yours](#make-it-yours) for changes that need no code.
 
 ### Connect the CRM as an MCP server
 
@@ -71,6 +94,32 @@ claude mcp add --transport stdio founder-crm -- "$(pwd)/.venv/bin/founder-crm" -
 On Windows, use `.venv\Scripts\activate` and the absolute path to `.venv\Scripts\founder-crm.exe`. An equivalent project configuration is in [.mcp.json.example](.mcp.json.example).
 
 Use the **same absolute database path** for the dashboard and MCP server. The default launcher demo uses `data/demo.db`; use that path in the MCP command to explore the same demo, or run `python3 scripts/start.py --empty` for your personal `data/crm.db`. MCP initializes a missing database as an empty workspace. Try “What do I owe people today?” or “Capture this call note and propose a follow-up.” MCP can read, capture and propose; approval stays in the dashboard or human CLI. The AI client you connect can read the records returned by its tools.
+
+## Make it yours
+
+Every business tracks something nobody else does: a licence number, a plan tier, which region a client sits in, an industry-specific qualification question. Founder CRM gives you three levels, and you should reach for them in this order.
+
+**1. Custom fields, no code.** Define a field once and it can be set on any relationship, contact, opportunity, ticket, interaction or event. Values are type-checked (text, number, integer, date, boolean, choice, JSON). Use the **Make it yours** view in the dashboard, or:
+
+```sh
+founder-crm field define account plan_tier "Plan tier" --type choice --choices free,team,enterprise
+founder-crm set "Paper Kite" plan_tier=team segment=agency
+founder-crm field define ticket customer_ref "Customer reference"
+founder-crm ticket set 12 customer_ref=INC-2041
+```
+
+**2. Your own qualification questions.** Mark an account field with `--qualification` and it joins the built-in questions (entity, team size, tools, pain points, use case, budget authority, decision process, fit). It counts toward each account's completeness and appears in the Qualification queue and form:
+
+```sh
+founder-crm field define account annual_budget "Annual budget band" \
+    --type choice --choices under_10k,10k_50k,over_50k --qualification
+```
+
+Leave unknown answers empty rather than guessing; an empty answer keeps the account in the queue.
+
+**3. Change the app with Claude.** For a new view, a new rule or a built-in field that deserves its own column, open this checkout in Claude Code and describe one concrete change (see [Use with Claude](#use-with-claude) and [personalisation prompts](docs/personalise.md)). A built-in field needs `schema.sql`, the `EDITABLE` list in `core.py`, and a test; `Store.init` upgrades an existing database by copying every changed table into its new shape and writes a backup first.
+
+**Moving in from another CRM or spreadsheet.** Write a small import script against `Store`: create records with `add_account`, `add_contact`, `open_ticket` and friends, put anything without a built-in home into custom fields, and record each source row in the `import_ids` table (`source`, `source_table`, `source_id` → new record) so a re-run updates rather than duplicates. Keep the script and its data outside this repository.
 
 ## Optional integrations
 
@@ -103,7 +152,7 @@ Proposals freeze their source, relationship and target context. Applied changes 
 ## Project layout
 
 ```text
-founder_crm/core.py          SQLite records, proposals, approval and audit
+founder_crm/core.py          SQLite records, workflows (tickets, qualification, custom fields), proposals, approval and audit
 founder_crm/schema.sql       The database schema
 founder_crm/web.py           Local HTTP server and dashboard routes
 founder_crm/static/          Build-free HTML, CSS and JavaScript
@@ -124,7 +173,7 @@ python -m unittest discover -s tests -v
 node --check founder_crm/static/app.js
 ```
 
-The base suite has **45 tests**. A real local HTTP/MCP workflow connects form intake, proposal, advisory judgment and human approval in one database. Provider responses are synthetic; the suite does not call Gmail, Web3Forms or Jev. The optional agency-owner extension adds five regression tests. [Release review](docs/release-review.md) and [verification details](docs/verification.md) distinguish installed-package checks from live service tests.
+The base suite has **52 tests**, including a v1-to-v2 database upgrade, the ticket fix/close/told loop, qualification completeness with custom questions, and custom-field validation. A real local HTTP/MCP workflow connects form intake, proposal, advisory judgment and human approval in one database. Provider responses are synthetic; the suite does not call Gmail, Web3Forms or Jev. [Release review](docs/release-review.md) and [verification details](docs/verification.md) distinguish installed-package checks from live service tests.
 
 ## Scope and data
 

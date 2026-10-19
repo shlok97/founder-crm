@@ -53,6 +53,7 @@ FILES = [
     "tests/test_http.py",
     "tests/test_mcp.py",
     "tests/test_integrations.py",
+    "tests/test_v2.py",
     "scripts/package_release.py",
     "scripts/start.py",
     "scripts/check_public_files.py",
@@ -62,7 +63,7 @@ FILES = [
 def package():
     dest = ROOT / "dist"
     dest.mkdir(exist_ok=True)
-    archive = dest / "founder-crm-0.1.1.zip"
+    archive = dest / "founder-crm-0.2.0.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
         for name in sorted(FILES):
             source = ROOT / name
