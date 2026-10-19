@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+<rect width="1200" height="800" fill="#111513"/>
+<g font-family="Arial, sans-serif" fill="#edf1ec">
+<text x="64" y="66" fill="#97d8af" font-size="14" letter-spacing="2">FOUNDER CRM / LOCAL FIRST</text>
+<text x="64" y="139" font-size="49" font-weight="600">A little less in my head.</text>
+<text x="64" y="181" font-size="21" fill="#adb9b2">Conversations, next steps, and the promises between them.</text>
+<path d="M64 217H1136" stroke="#39473e"/>
+<g fill="#1b211d" stroke="#45594c">
+<rect x="64" y="263" width="308" height="88"/>
+<rect x="64" y="371" width="308" height="88"/>
+<rect x="64" y="479" width="308" height="88"/>
+<rect x="460" y="335" width="280" height="160"/>
+<rect x="828" y="263" width="308" height="126" stroke="#97d8af"/>
+<rect x="828" y="441" width="308" height="126"/>
+</g>
+<g stroke="#97d8af" fill="none" stroke-width="2">
+<path d="M372 307H414V523H372M414 415H450M740 415H784V326H818M784 415V504H818M982 389V431"/>
+</g>
+<g fill="#97d8af"><path d="M450 410L460 415L450 420Z"/><path d="M818 321L828 326L818 331Z"/><path d="M818 499L828 504L818 509Z"/><path d="M977 431L982 441L987 431Z"/></g>
+<g font-size="25"><text x="86" y="302">Gmail</text><text x="86" y="410">Web3Forms</text><text x="86" y="518">Claude Code</text><text x="485" y="385">SQLite</text><text x="852" y="305">Jev</text><text x="852" y="483">Human review</text></g>
+<g font-size="16" fill="#adb9b2"><text x="86" y="329">Read-only email intake</text><text x="86" y="437">Website enquiries</text><text x="86" y="545">Notes + MCP + skills</text><text x="485" y="420">Source evidence</text><text x="485" y="451">Proposed updates + history</text><text x="852" y="338">Does the evidence support</text><text x="852" y="362">this proposed update?</text><text x="852" y="517">Approve, reject, or ask.</text><text x="852" y="542">Then save with an audit trail.</text></g>
+<path d="M64 621H1136" stroke="#39473e"/>
+<text x="64" y="667" font-size="20">A fix shipped ≠ a customer notified.</text>
+<text x="64" y="703" fill="#adb9b2" font-size="17">Keep the evidence. Review the update. Close the loop.</text>
+<text x="64" y="756" fill="#7e9187" font-size="13" letter-spacing="1">STARTER ARCHITECTURE · MODEL JUDGMENTS ARE OPTIONAL AND ADVISORY</text>
+</g></svg>
