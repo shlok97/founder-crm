@@ -106,7 +106,7 @@ def gmail_text(payload):
 
 
 def sync_gmail(store, query="in:inbox newer_than:14d", limit=20, *, fetch=None):
-    if not isinstance(limit, int) or not 1 <= limit <= 50:
+    if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= 50:
         raise CRMError("Gmail pull limit must be 1–50 messages.")
     if not isinstance(query, str) or len(query) > 1000:
         raise CRMError("Invalid Gmail query.")
@@ -139,8 +139,12 @@ def sync_gmail(store, query="in:inbox newer_than:14d", limit=20, *, fetch=None):
             for h in msg.get("payload", {}).get("headers", [])
         }
         outbound = "SENT" in msg.get("labelIds", [])
-        raw = headers.get("to" if outbound else "from", "")
-        addresses = [address.lower() for _, address in getaddresses([raw])]
+        recipients = (
+            [headers.get(field, "") for field in ("to", "cc", "bcc")]
+            if outbound
+            else [headers.get("from", "")]
+        )
+        addresses = sorted({address.lower() for _, address in getaddresses(recipients) if address})
         # Multi-recipient mail cannot attest a notification to one known contact.
         sender = addresses[0] if len(addresses) == 1 else ""
         body = (

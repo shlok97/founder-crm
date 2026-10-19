@@ -18,6 +18,7 @@ FILES = [
     ".env.example",
     ".mcp.json.example",
     ".github/workflows/checks.yml",
+    ".githooks/pre-push",
     "founder_crm/__init__.py",
     "founder_crm/__main__.py",
     "founder_crm/core.py",
@@ -39,15 +40,19 @@ FILES = [
     "docs/personalisation-test.md",
     "docs/examples/agency-owner.patch",
     "docs/verification.md",
+    "docs/release-review.md",
+    "docs/maintaining.md",
     "docs/images/dashboard.jpg",
     "docs/images/architecture.svg",
     "docs/images/architecture.png",
     "docs/brand/altys-logo.svg",
-    "docs/brand/github-social.svg",
-    "docs/brand/github-social.png",
+    "docs/brand/README.md",
+    "docs/brand/github-social.jpg",
+    "docs/brand/founder-crm-indian-editorial.png",
     "tests/test_workflow.py",
     "tests/test_http.py",
     "tests/test_mcp.py",
+    "tests/test_integrations.py",
     "scripts/package_release.py",
     "scripts/start.py",
     "scripts/check_public_files.py",
@@ -57,7 +62,7 @@ FILES = [
 def package():
     dest = ROOT / "dist"
     dest.mkdir(exist_ok=True)
-    archive = dest / "founder-crm-0.1.0.zip"
+    archive = dest / "founder-crm-0.1.1.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
         for name in sorted(FILES):
             source = ROOT / name
@@ -67,7 +72,8 @@ def package():
                 "founder-crm/" + name, date_time=(2026, 10, 19, 0, 0, 0)
             )
             info.compress_type = zipfile.ZIP_DEFLATED
-            info.external_attr = 0o100644 << 16
+            mode = 0o100755 if source.stat().st_mode & 0o111 else 0o100644
+            info.external_attr = mode << 16
             z.writestr(info, source.read_bytes())
     checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
     (dest / "SHA256SUMS").write_text(f"{checksum}  {archive.name}\n")

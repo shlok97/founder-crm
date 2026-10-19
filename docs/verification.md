@@ -1,6 +1,6 @@
 # Verification · 19 October 2026
 
-This starter is implemented locally. External services are opt-in; the verification below does not establish live mailbox, form delivery or Jev accuracy. The source release contains generalised workflow lessons and fictional demo records.
+The starter is published on GitHub. See [the expanded release review](release-review.md) for the latest 45 base / 50 customised checks. The original checks below are retained as dated evidence. External services are opt-in; the verification below does not establish live mailbox, form delivery or Jev accuracy. The source release contains generalised workflow lessons and fictional demo records.
 
 ## Automated checks
 
@@ -28,4 +28,4 @@ A later user-authorized trial replayed three actual historical Altys records in 
 
 This is a bounded workflow fit check. It is not a complete migration or a claim of live Gmail, Web3Forms or Jev use. KYC, commercial deal terms, event/source catalogues and the original ticket state taxonomy still belong to the operational CRM. No underlying business records, private evidence, trial databases or source identities are part of this repository. The launch image contains an aggregate description of the three cases only.
 
-The [personalisation test](personalisation-test.md) used Claude Code on a source-only agency copy. The initial change had a migration defect; the locally reviewed correction passes 44 tests and actual MCP/browser checks. The base starter remains at 39 tests; the owner extension and five extra regression tests are supplied as an optional patch.
+The [personalisation test](personalisation-test.md) used Claude Code on a source-only agency copy. The initial change had a migration defect; the locally reviewed correction passes 44 tests and actual MCP/browser checks. The original base starter had 39 tests; the owner extension and five extra regression tests are supplied as an optional patch.

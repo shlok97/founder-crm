@@ -1,4 +1,4 @@
-![Founder CRM by Altys](docs/brand/github-social.png)
+![Founders reviewing their conversations in an Indian courtyard](docs/brand/github-social.jpg)
 
 # Founder CRM
 
@@ -55,7 +55,7 @@ Open this checkout in **Claude Code** and describe one concrete change:
 
 The project includes `CLAUDE.md`, operating rules and three skills for daily review, conversation capture and proposal review. Start with fictional records, inspect the changes, then try them in the browser.
 
-We tested the agency-owner customisation through Claude Code. The first pass needed an upgrade correction; the reviewed extension passes 44 tests. [See the example and apply its patch](docs/personalisation-test.md), or read [more personalisation prompts](docs/personalise.md).
+We tested the agency-owner customisation through Claude Code. The first pass needed an upgrade correction; the reviewed extension now passes 50 tests. [See the example and apply its patch](docs/personalisation-test.md), or read [more personalisation prompts](docs/personalise.md).
 
 ### Connect the CRM as an MCP server
 
@@ -70,7 +70,7 @@ claude mcp add --transport stdio founder-crm -- "$(pwd)/.venv/bin/founder-crm" -
 
 On Windows, use `.venv\Scripts\activate` and the absolute path to `.venv\Scripts\founder-crm.exe`. An equivalent project configuration is in [.mcp.json.example](.mcp.json.example).
 
-Use the **same absolute database path** for the dashboard and MCP server. Try “What do I owe people today?” or “Capture this call note and propose a follow-up.” MCP can read, capture and propose; approval stays in the dashboard or human CLI. The AI client you connect can read the records returned by its tools.
+Use the **same absolute database path** for the dashboard and MCP server. The default launcher demo uses `data/demo.db`; use that path in the MCP command to explore the same demo, or run `python3 scripts/start.py --empty` for your personal `data/crm.db`. MCP initializes a missing database as an empty workspace. Try “What do I owe people today?” or “Capture this call note and propose a follow-up.” MCP can read, capture and propose; approval stays in the dashboard or human CLI. The AI client you connect can read the records returned by its tools.
 
 ## Optional integrations
 
@@ -124,7 +124,7 @@ python -m unittest discover -s tests -v
 node --check founder_crm/static/app.js
 ```
 
-The base suite has **39 tests**. Fixtures cover Gmail, Web3Forms and Jev without calling those services. The optional agency-owner extension adds five regression tests. [Verification details](docs/verification.md) distinguish local workflow checks from live service tests.
+The base suite has **45 tests**. A real local HTTP/MCP workflow connects form intake, proposal, advisory judgment and human approval in one database. Provider responses are synthetic; the suite does not call Gmail, Web3Forms or Jev. The optional agency-owner extension adds five regression tests. [Release review](docs/release-review.md) and [verification details](docs/verification.md) distinguish installed-package checks from live service tests.
 
 ## Scope and data
 
@@ -137,3 +137,5 @@ The repository contains **fictional demo records and synthetic fixtures**. It co
 Small improvements grounded in a real workflow are welcome. See [contributing](CONTRIBUTING.md), [security reporting](SECURITY.md) and the [MIT licence](LICENSE).
 
 Built by **Altys**. Clone it, make it yours, and share what you learn.
+
+Maintainers: use the documented [Git push workflow](docs/maintaining.md), including the source/privacy pre-push hook.

@@ -1,7 +1,9 @@
 """Check the exact source-release allowlist; never inspect private runtime data."""
 
 from pathlib import Path
+import argparse
 import re
+import subprocess
 import sys
 
 from package_release import FILES, ROOT
@@ -50,5 +52,49 @@ def check():
     )
 
 
+def git(*args):
+    return subprocess.check_output(["git", *args], cwd=ROOT)
+
+
+def check_tracked():
+    # Bind the scan to what Git will publish, not an uncommitted working copy.
+    if subprocess.run(["git", "diff", "--quiet", "HEAD", "--"], cwd=ROOT).returncode:
+        raise SystemExit("Commit tracked changes before the push check.")
+    tracked = set(git("ls-files").decode().splitlines())
+    if tracked != set(FILES):
+        raise SystemExit("Tracked files differ from the public allowlist: " + ", ".join(sorted(tracked ^ set(FILES))))
+
+
+def check_outgoing(updates):
+    # Inspect every new/changed blob in outgoing commits, including a private file
+    # added and removed before HEAD. Report paths only, never matching contents.
+    for line in updates.splitlines():
+        local_ref, local_sha, remote_ref, remote_sha = line.split()
+        if set(local_sha) == {"0"}:
+            continue
+        revisions = [local_sha]
+        if set(remote_sha) != {"0"}:
+            revisions.append("^" + remote_sha)
+        for commit in git("rev-list", *revisions).decode().splitlines():
+            names = git("diff-tree", "--root", "--no-commit-id", "-r", "--diff-filter=ACMRT", "--name-only", "-z", commit).decode().split("\0")
+            for name in filter(None, names):
+                if name not in FILES:
+                    raise SystemExit("Push refused: unreviewed file in outgoing history: " + name)
+                if Path(name).suffix.lower() in {".png", ".jpg", ".jpeg"}:
+                    continue
+                content = git("show", commit + ":" + name).decode()
+                for label, pattern in PATTERNS.items():
+                    if pattern.search(content):
+                        raise SystemExit("Push refused: possible " + label + " in " + name)
+
+
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--tracked", action="store_true", help="Require a clean tracked tree matching the release allowlist")
+    parser.add_argument("--pre-push", action="store_true", help="Also check outgoing Git history supplied by the pre-push hook")
+    args = parser.parse_args()
+    if args.tracked or args.pre_push:
+        check_tracked()
     check()
+    if args.pre_push:
+        check_outgoing(sys.stdin.read())

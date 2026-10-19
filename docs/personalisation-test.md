@@ -4,7 +4,7 @@ On 19 October 2026, Claude Code was asked to adapt a source-only copy of this st
 
 Claude changed the schema, store, CLI and dashboard. It reached its budget stop before finishing validation. Its first version failed an independent populated-database upgrade check: `Store.init` skipped its migration, leaving existing accounts without the new column. Review also preserved the positional audit-actor argument and corrected the CLI to pass owner by keyword.
 
-Those corrections were made locally, with regression tests. The reviewed copy passes 44 tests, plus independent checks for idempotent upgrades, existing contact/task preservation, unknown owners staying NULL, new owner persistence and actual MCP stdio reads. A browser check added a fictional relationship with an owner, reloaded the page and reopened it successfully. No private CRM data or actual customer system was changed by this exercise.
+Those corrections were made locally, with regression tests. The reviewed copy initially passed 44 tests and now passes 50 with the expanded integration suite, plus independent checks for idempotent upgrades, existing contact/task preservation, unknown owners staying NULL, new owner persistence and actual MCP stdio reads. A browser check added a fictional relationship with an owner, reloaded the page and reopened it successfully. No private CRM data or actual customer system was changed by this exercise.
 
 The resulting [agency owner patch](examples/agency-owner.patch) contains the implementation and migration fixture/tests. On a clean copy of this version:
 
