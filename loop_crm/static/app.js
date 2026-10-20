@@ -786,7 +786,7 @@ const JOURNEY = [
     title: "Get your own copy",
     tone: "var(--sage)",
     text: "Clone the repository and open the folder in Claude Code or Codex. Everything below is a conversation with your coding agent in that folder.",
-    code: "git clone https://github.com/shlok97/founder-crm.git\ncd founder-crm\nclaude        # or: codex",
+    code: "git clone https://github.com/shlok97/loop-crm.git\ncd loop-crm\nclaude        # or: codex",
   },
   {
     title: "Start an empty workspace",
@@ -798,32 +798,32 @@ const JOURNEY = [
     title: "Bring what you already have",
     tone: "var(--lavender)",
     text: "Tell the agent where your current records are: a spreadsheet, a CRM export, a SQLite or Postgres database, a Notion table. Ask for an import that keeps every field and can be run again safely.",
-    code: "My customer records are in <path or system>: <describe the tables or columns>.\nWrite a script outside this repository that imports them into founder-crm using Store.\nMap each field to a built-in column where one fits. Put everything else in custom fields; do not drop data.\nRecord every source row in import_ids so a re-run updates instead of duplicating.\nThen compare counts per table and show me three records side by side.",
+    code: "My customer records are in <path or system>: <describe the tables or columns>.\nWrite a script outside this repository that imports them into loop-crm using Store.\nMap each field to a built-in column where one fits. Put everything else in custom fields; do not drop data.\nRecord every source row in import_ids so a re-run updates instead of duplicating.\nThen compare counts per table and show me three records side by side.",
   },
   {
     title: "Connect the channels your customers use",
     tone: "var(--lavender)",
     text: "List where customers actually talk to you: email, WhatsApp, Slack, calls, a website form. Gmail and web forms are built in. For anything else, ask for an adapter that brings messages in as evidence and never sends on its own.",
-    code: "Our customers reach us through <email / WhatsApp / Slack channel #... / calls>.\nAdd an opt-in integration for <channel> following the Gmail adapter in founder_crm/integrations.py:\nmessages arrive as intake evidence, nothing is sent automatically, credentials come from the environment.\nAdd tests with synthetic messages.",
+    code: "Our customers reach us through <email / WhatsApp / Slack channel #... / calls>.\nAdd an opt-in integration for <channel> following the Gmail adapter in loop_crm/integrations.py:\nmessages arrive as intake evidence, nothing is sent automatically, credentials come from the environment.\nAdd tests with synthetic messages.",
   },
   {
     title: "Add the fields only your business needs",
     tone: "var(--butter)",
     text: "A licence number, a plan tier, a region. Define them here or from the command line. Mark an account field as a qualification question and it joins the Qualification queue.",
-    code: 'founder-crm field define account plan_tier "Plan tier" --type choice --choices free,team,enterprise --qualification',
+    code: 'loop-crm field define account plan_tier "Plan tier" --type choice --choices free,team,enterprise --qualification',
     fields: true,
   },
   {
     title: "Keep your data out of Git",
     tone: "var(--butter)",
     text: "If you change the code and push it anywhere, point the publish check at your database once. It then refuses any commit that contains one of your customers' names or emails.",
-    code: "git config founder-crm.privateDb $(pwd)/data/crm.db\ngit config core.hooksPath .githooks",
+    code: "git config loop-crm.privateDb $(pwd)/data/crm.db\ngit config core.hooksPath .githooks",
   },
   {
     title: "Make it part of your day",
     tone: "var(--coral)",
     text: "Open the dashboard each morning, and connect Claude so it can read the CRM and propose updates. Approval always stays with you.",
-    code: 'founder-crm serve\nclaude mcp add --transport stdio founder-crm -- "$(pwd)/.venv/bin/founder-crm" --db "$(pwd)/data/crm.db" mcp',
+    code: 'loop-crm serve\nclaude mcp add --transport stdio loop-crm -- "$(pwd)/.venv/bin/loop-crm" --db "$(pwd)/data/crm.db" mcp',
   },
 ];
 function renderYours(c) {
@@ -964,7 +964,7 @@ function renderConnections(c) {
           node(
             "p",
             "hint",
-            "Set FOUNDER_CRM_JEV_API_KEY and choose typesafe or openrouter. To share a proposal and its evidence with the provider, explicitly set FOUNDER_CRM_ALLOW_MODEL_EGRESS=1. Ask Jev on a proposal to make a call.",
+            "Set LOOP_CRM_JEV_API_KEY and choose typesafe or openrouter. To share a proposal and its evidence with the provider, explicitly set LOOP_CRM_ALLOW_MODEL_EGRESS=1. Ask Jev on a proposal to make a call.",
           ),
           node(
             "p",
@@ -1148,7 +1148,7 @@ function claudeHelp() {
     node(
       "pre",
       "",
-      'python -m pip install -e ".[mcp]"\nclaude mcp add --transport stdio founder-crm -- /absolute/path/to/.venv/bin/founder-crm --db /absolute/path/to/data/crm.db mcp',
+      'python -m pip install -e ".[mcp]"\nclaude mcp add --transport stdio loop-crm -- /absolute/path/to/.venv/bin/loop-crm --db /absolute/path/to/data/crm.db mcp',
     ),
     node(
       "p",

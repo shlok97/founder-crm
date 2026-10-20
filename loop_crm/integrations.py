@@ -35,7 +35,7 @@ def gmail_auth(store, client_secrets):
 
 
 def gmail_access_token(store):
-    token = os.getenv("FOUNDER_CRM_GMAIL_ACCESS_TOKEN")
+    token = os.getenv("LOOP_CRM_GMAIL_ACCESS_TOKEN")
     if token:
         return token
     path = gmail_token_path(store)
@@ -59,7 +59,7 @@ def gmail_access_token(store):
                 "Gmail credentials need attention. Run gmail-auth again; no mail was changed."
             ) from e
     raise CRMError(
-        "Run gmail-auth with your Desktop OAuth client, or set FOUNDER_CRM_GMAIL_ACCESS_TOKEN."
+        "Run gmail-auth with your Desktop OAuth client, or set LOOP_CRM_GMAIL_ACCESS_TOKEN."
     )
 
 

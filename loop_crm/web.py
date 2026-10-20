@@ -58,14 +58,14 @@ def make_server(store, port=4780):
                         )
                     data["integrations"] = {
                         "gmail_configured": bool(
-                            os.getenv("FOUNDER_CRM_GMAIL_ACCESS_TOKEN")
+                            os.getenv("LOOP_CRM_GMAIL_ACCESS_TOKEN")
                             or gmail_token_path(store).exists()
                         ),
-                        "jev_configured": bool(os.getenv("FOUNDER_CRM_JEV_API_KEY")),
-                        "model_sharing": os.getenv("FOUNDER_CRM_ALLOW_MODEL_EGRESS")
+                        "jev_configured": bool(os.getenv("LOOP_CRM_JEV_API_KEY")),
+                        "model_sharing": os.getenv("LOOP_CRM_ALLOW_MODEL_EGRESS")
                         == "1",
                         "forms_configured": bool(
-                            os.getenv("FOUNDER_CRM_WEBHOOK_TOKEN")
+                            os.getenv("LOOP_CRM_WEBHOOK_TOKEN")
                         ),
                     }
                     return self.send(200, data)
@@ -98,7 +98,7 @@ def make_server(store, port=4780):
             path = urlsplit(self.path).path
             hook = path.startswith("/hooks/web3forms/")
             if hook:
-                token = os.getenv("FOUNDER_CRM_WEBHOOK_TOKEN", "")
+                token = os.getenv("LOOP_CRM_WEBHOOK_TOKEN", "")
                 supplied = path.removeprefix("/hooks/web3forms/")
                 if len(token) < 32 or not hmac.compare_digest(supplied, token):
                     return self.send(403, {"error": "Invalid webhook credential."})
@@ -196,7 +196,7 @@ def make_server(store, port=4780):
 
 def serve(store, port=4780):
     server = make_server(store, port)
-    print(f"Founder CRM: http://127.0.0.1:{server.server_port}", flush=True)
+    print(f"Loop CRM: http://127.0.0.1:{server.server_port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

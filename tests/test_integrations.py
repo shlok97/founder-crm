@@ -20,10 +20,10 @@ from unittest.mock import patch
 from urllib.error import HTTPError
 from urllib.parse import parse_qs, urlsplit
 
-from founder_crm.core import CRMError, Store
-from founder_crm.integrations import sync_gmail
-from founder_crm.judge import judge_proposal
-from founder_crm.web import make_server
+from loop_crm.core import CRMError, Store
+from loop_crm.integrations import sync_gmail
+from loop_crm.judge import judge_proposal
+from loop_crm.web import make_server
 
 
 def choice_response():
@@ -61,11 +61,11 @@ class ProviderContractTests(unittest.TestCase):
         }
         for provider, (endpoint, model) in providers.items():
             with self.subTest(provider=provider), patch.dict(os.environ, {
-                "FOUNDER_CRM_JEV_PROVIDER": provider,
-                "FOUNDER_CRM_JEV_API_KEY": "synthetic-test-key",
-                "FOUNDER_CRM_ALLOW_MODEL_EGRESS": "1",
-                "FOUNDER_CRM_JEV_MODEL": "",
-            }), patch("founder_crm.judge.urlopen", return_value=json_response(choice_response())) as send:
+                "LOOP_CRM_JEV_PROVIDER": provider,
+                "LOOP_CRM_JEV_API_KEY": "synthetic-test-key",
+                "LOOP_CRM_ALLOW_MODEL_EGRESS": "1",
+                "LOOP_CRM_JEV_MODEL": "",
+            }), patch("loop_crm.judge.urlopen", return_value=json_response(choice_response())) as send:
                 result = judge_proposal(self.store, self.proposal)
                 request = send.call_args.args[0]
                 self.assertEqual(request.full_url, endpoint)
@@ -84,9 +84,9 @@ class ProviderContractTests(unittest.TestCase):
         failures.append(json.JSONDecodeError("Synthetic malformed response", "", 0))
         for failure in failures:
             with self.subTest(failure=type(failure).__name__), patch.dict(os.environ, {
-                "FOUNDER_CRM_JEV_API_KEY": "synthetic-test-key",
-                "FOUNDER_CRM_ALLOW_MODEL_EGRESS": "1",
-            }), patch("founder_crm.judge.urlopen", side_effect=failure):
+                "LOOP_CRM_JEV_API_KEY": "synthetic-test-key",
+                "LOOP_CRM_ALLOW_MODEL_EGRESS": "1",
+            }), patch("loop_crm.judge.urlopen", side_effect=failure):
                 with self.assertRaises(CRMError):
                     judge_proposal(self.store, self.proposal)
         p = self.store.proposal(self.proposal)
@@ -115,7 +115,7 @@ class ProviderContractTests(unittest.TestCase):
             self.assertTrue(u.path.endswith("/messages/test-message"))
             self.assertEqual(parse_qs(u.query), {"format": ["full"]})
             return json_response(message)
-        with patch.dict(os.environ, {"FOUNDER_CRM_GMAIL_ACCESS_TOKEN": "synthetic-mail-token"}), patch("founder_crm.integrations.urlopen", side_effect=send):
+        with patch.dict(os.environ, {"LOOP_CRM_GMAIL_ACCESS_TOKEN": "synthetic-mail-token"}), patch("loop_crm.integrations.urlopen", side_effect=send):
             first = sync_gmail(self.store, "in:inbox newer_than:1d", 1)
             second = sync_gmail(self.store, "in:inbox newer_than:1d", 1)
         self.assertEqual((first["new"], second["duplicates"]), (1, 1))
@@ -141,7 +141,7 @@ class ProviderContractTests(unittest.TestCase):
         self.assertTrue(all(r["contact_id"] is None and r["sender"] == "" for r in rows))
 
     def test_gmail_boolean_limit_refused_before_network(self):
-        with patch("founder_crm.integrations.urlopen") as send, self.assertRaises(CRMError):
+        with patch("loop_crm.integrations.urlopen") as send, self.assertRaises(CRMError):
             sync_gmail(self.store, limit=True)
         send.assert_not_called()
 
@@ -153,14 +153,14 @@ class InteroperabilityTests(unittest.IsolatedAsyncioTestCase):
         from mcp.client.stdio import stdio_client
 
         with tempfile.TemporaryDirectory() as tmp, patch.dict(os.environ, {
-            "FOUNDER_CRM_WEBHOOK_TOKEN": "synthetic-hook-token-" * 3,
-            "FOUNDER_CRM_JEV_PROVIDER": "typesafe",
-            "FOUNDER_CRM_JEV_API_KEY": "synthetic-test-key",
-            "FOUNDER_CRM_ALLOW_MODEL_EGRESS": "1",
-            "FOUNDER_CRM_JEV_MODEL": "",
+            "LOOP_CRM_WEBHOOK_TOKEN": "synthetic-hook-token-" * 3,
+            "LOOP_CRM_JEV_PROVIDER": "typesafe",
+            "LOOP_CRM_JEV_API_KEY": "synthetic-test-key",
+            "LOOP_CRM_ALLOW_MODEL_EGRESS": "1",
+            "LOOP_CRM_JEV_MODEL": "",
         }):
             db = Path(tmp) / "fresh.db"
-            params = StdioServerParameters(command=sys.executable, args=["-m", "founder_crm", "--db", str(db), "mcp"], env={**os.environ, "FOUNDER_CRM_ALLOW_MODEL_EGRESS": "0"})
+            params = StdioServerParameters(command=sys.executable, args=["-m", "loop_crm", "--db", str(db), "mcp"], env={**os.environ, "LOOP_CRM_ALLOW_MODEL_EGRESS": "0"})
             async with stdio_client(params) as (reader, writer):
                 async with ClientSession(reader, writer) as session:
                     await session.initialize()
@@ -185,7 +185,7 @@ class InteroperabilityTests(unittest.IsolatedAsyncioTestCase):
                         account = json.loads(body)["id"]
                         self.assertEqual(request("/api/contacts", {"account_id": account, "name": "Demo Person", "email": "person@workflow.example"})[0], 200)
                         form = {"email": "person@workflow.example", "message": "Could you send two times for a demo?", "submittedAt": "2026-10-19T10:00:00Z"}
-                        hook = "/hooks/web3forms/" + os.environ["FOUNDER_CRM_WEBHOOK_TOKEN"]
+                        hook = "/hooks/web3forms/" + os.environ["LOOP_CRM_WEBHOOK_TOKEN"]
                         status, body = request(hook, form)
                         self.assertEqual(status, 200)
                         intake = json.loads(body)["id"]
@@ -193,7 +193,7 @@ class InteroperabilityTests(unittest.IsolatedAsyncioTestCase):
                         result = await session.call_tool("crm_propose_update", {"intake_id": intake, "action": "create_task", "payload": {"account_id": account, "title": "Offer two possible times"}})
                         self.assertFalse(result.isError)
                         proposal = json.loads(result.content[0].text)["id"]
-                        with patch("founder_crm.judge.urlopen", return_value=json_response(choice_response())):
+                        with patch("loop_crm.judge.urlopen", return_value=json_response(choice_response())):
                             self.assertEqual(request("/api/judge", {"id": proposal})[0], 200)
                         self.assertEqual(store.dashboard()["tasks"], [])
                         self.assertEqual(store.proposal(proposal)["status"], "pending")

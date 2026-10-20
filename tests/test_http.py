@@ -8,8 +8,8 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from founder_crm.core import Store
-from founder_crm.web import make_server
+from loop_crm.core import Store
+from loop_crm.web import make_server
 
 
 class HTTPTests(unittest.TestCase):
@@ -120,7 +120,7 @@ class HTTPTests(unittest.TestCase):
                 "submission_id": "same-form",
             }
         )
-        with patch.dict(os.environ, {"FOUNDER_CRM_WEBHOOK_TOKEN": token}):
+        with patch.dict(os.environ, {"LOOP_CRM_WEBHOOK_TOKEN": token}):
             self.assertEqual(
                 self.request(
                     "/hooks/web3forms/wrong",

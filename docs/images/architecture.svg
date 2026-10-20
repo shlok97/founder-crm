@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
 <rect width="1200" height="800" fill="#111513"/>
 <g font-family="Arial, sans-serif" fill="#edf1ec">
-<text x="64" y="66" fill="#97d8af" font-size="14" letter-spacing="2">FOUNDER CRM / LOCAL FIRST</text>
+<text x="64" y="66" fill="#97d8af" font-size="14" letter-spacing="2">LOOP CRM / LOCAL FIRST</text>
 <text x="64" y="139" font-size="49" font-weight="600">A little less in my head.</text>
 <text x="64" y="181" font-size="21" fill="#adb9b2">Conversations, next steps, and the promises between them.</text>
 <path d="M64 217H1136" stroke="#39473e"/>

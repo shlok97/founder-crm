@@ -1,7 +1,7 @@
 # Banner artwork
 
 `github-social.jpg` is the 1280 × 640 display copy of
-`founder-crm-indian-editorial.png`. The artwork has no overlaid text, wordmark or
+`loop-crm-indian-editorial.png`. The artwork has no overlaid text, wordmark or
 logo. It follows the Indian editorial painting direction used on Altys's blog:
 warm sandstone, indigo clothing, honey sunlight, city rooftops and visible painted
 texture. The people and setting are fictional.

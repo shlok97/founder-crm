@@ -8,7 +8,7 @@ a hosted CRM or a verified live-mailbox deployment.
 
 - Optional adapter installation failed after the demo created a `data/` directory.
   Setuptools treated it as another top-level package. Packaging now explicitly
-  includes only `founder_crm` and its schema/static resources. The wheel excludes
+  includes only `loop_crm` and its schema/static resources. The wheel excludes
   runtime data and private configuration.
 - MCP could start against an uninitialized database but its first read failed.
   Startup now initializes an empty database and preserves existing records.

@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from founder_crm.core import CRMError, Store
+from loop_crm.core import CRMError, Store
 
 V1_SCHEMA = """
 CREATE TABLE meta(key TEXT PRIMARY KEY,value TEXT NOT NULL);

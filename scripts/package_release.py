@@ -19,18 +19,18 @@ FILES = [
     ".mcp.json.example",
     ".github/workflows/checks.yml",
     ".githooks/pre-push",
-    "founder_crm/__init__.py",
-    "founder_crm/__main__.py",
-    "founder_crm/core.py",
-    "founder_crm/schema.sql",
-    "founder_crm/demo.py",
-    "founder_crm/judge.py",
-    "founder_crm/integrations.py",
-    "founder_crm/web.py",
-    "founder_crm/mcp_server.py",
-    "founder_crm/static/index.html",
-    "founder_crm/static/style.css",
-    "founder_crm/static/app.js",
+    "loop_crm/__init__.py",
+    "loop_crm/__main__.py",
+    "loop_crm/core.py",
+    "loop_crm/schema.sql",
+    "loop_crm/demo.py",
+    "loop_crm/judge.py",
+    "loop_crm/integrations.py",
+    "loop_crm/web.py",
+    "loop_crm/mcp_server.py",
+    "loop_crm/static/index.html",
+    "loop_crm/static/style.css",
+    "loop_crm/static/app.js",
     ".claude/skills/crm-daily-review/SKILL.md",
     ".claude/skills/crm-capture-conversation/SKILL.md",
     ".claude/skills/crm-review-proposal/SKILL.md",
@@ -48,7 +48,7 @@ FILES = [
     "docs/brand/altys-logo.svg",
     "docs/brand/README.md",
     "docs/brand/github-social.jpg",
-    "docs/brand/founder-crm-indian-editorial.png",
+    "docs/brand/loop-crm-indian-editorial.png",
     "tests/test_workflow.py",
     "tests/test_http.py",
     "tests/test_mcp.py",
@@ -63,14 +63,14 @@ FILES = [
 def package():
     dest = ROOT / "dist"
     dest.mkdir(exist_ok=True)
-    archive = dest / "founder-crm-0.3.0.zip"
+    archive = dest / "loop-crm-0.4.0.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
         for name in sorted(FILES):
             source = ROOT / name
             if source.is_symlink() or not source.is_file():
                 raise RuntimeError(f"Expected a regular release file: {name}")
             info = zipfile.ZipInfo(
-                "founder-crm/" + name, date_time=(2026, 10, 19, 0, 0, 0)
+                "loop-crm/" + name, date_time=(2026, 10, 19, 0, 0, 0)
             )
             info.compress_type = zipfile.ZIP_DEFLATED
             mode = 0o100755 if source.stat().st_mode & 0o111 else 0o100644

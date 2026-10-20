@@ -430,13 +430,13 @@ def upgrade(c, schema, path):
 
 class Store:
     def __init__(self, path=None):
-        self.path = Path(path or os.getenv("FOUNDER_CRM_DB", "data/crm.db")).resolve()
+        self.path = Path(path or os.getenv("LOOP_CRM_DB", "data/crm.db")).resolve()
 
     @contextlib.contextmanager
     def connection(self, write=False):
         if not self.path.exists():
             raise CRMError(
-                "Database not initialized. Run python -m founder_crm init first."
+                "Database not initialized. Run python -m loop_crm init first."
             )
         c = sqlite3.connect(self.path, timeout=15)
         c.row_factory = sqlite3.Row

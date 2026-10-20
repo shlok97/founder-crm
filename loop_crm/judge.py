@@ -28,11 +28,11 @@ def judge_proposal(store, id, *, transport=None):
     p = store.proposal(id)
     if p["status"] != "pending":
         raise CRMError("Only pending proposals can be judged.")
-    if transport is None and os.getenv("FOUNDER_CRM_ALLOW_MODEL_EGRESS") != "1":
+    if transport is None and os.getenv("LOOP_CRM_ALLOW_MODEL_EGRESS") != "1":
         raise CRMError(
-            "Model sharing is off. Set FOUNDER_CRM_ALLOW_MODEL_EGRESS=1 only after deciding to share this CRM evidence with your configured Jev provider."
+            "Model sharing is off. Set LOOP_CRM_ALLOW_MODEL_EGRESS=1 only after deciding to share this CRM evidence with your configured Jev provider."
         )
-    provider = os.getenv("FOUNDER_CRM_JEV_PROVIDER", "typesafe")
+    provider = os.getenv("LOOP_CRM_JEV_PROVIDER", "typesafe")
     if provider not in {"typesafe", "openrouter"}:
         raise CRMError("Jev provider must be typesafe or openrouter.")
     defaults = {
@@ -43,7 +43,7 @@ def judge_proposal(store, id, *, transport=None):
         ),
     }
     endpoint, model = defaults[provider]
-    model = os.getenv("FOUNDER_CRM_JEV_MODEL") or model
+    model = os.getenv("LOOP_CRM_JEV_MODEL") or model
     # This payload is what leaves the local database. No ambient mail/CRM integrations are read.
     payload = {
         "model": model,
@@ -53,10 +53,10 @@ def judge_proposal(store, id, *, transport=None):
         },
         "questions": {"supported": QUESTION},
     }
-    key = os.getenv("FOUNDER_CRM_JEV_API_KEY")
+    key = os.getenv("LOOP_CRM_JEV_API_KEY")
     if transport is None:
         if not key:
-            raise CRMError("Configure FOUNDER_CRM_JEV_API_KEY first.")
+            raise CRMError("Configure LOOP_CRM_JEV_API_KEY first.")
 
         def transport(payload):
             req = Request(

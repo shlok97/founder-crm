@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Create demo before installing optional adapters
-        run: python -m founder_crm --db data/install-smoke.db demo
+        run: python -m loop_crm --db data/install-smoke.db demo
       - name: Install real package with optional adapters
         run: python -m pip install '.[mcp,gmail]'
       - name: Check public source allowlist
@@ -23,9 +23,9 @@ jobs:
           smoke_dir=$(mktemp -d)
           cp -R tests "$smoke_dir/tests"
           cd "$smoke_dir"
-          founder-crm --db cli.db init
-          founder-crm --db cli.db dashboard
-          python -c 'from importlib.resources import files; p = files("founder_crm"); assert (p / "schema.sql").is_file(); assert all((p / "static" / n).is_file() for n in ("index.html", "app.js", "style.css"))'
+          loop-crm --db cli.db init
+          loop-crm --db cli.db dashboard
+          python -c 'from importlib.resources import files; p = files("loop_crm"); assert (p / "schema.sql").is_file(); assert all((p / "static" / n).is_file() for n in ("index.html", "app.js", "style.css"))'
           python -m unittest discover -s tests -v
       - name: Check browser JavaScript
-        run: node --check founder_crm/static/app.js
+        run: node --check loop_crm/static/app.js

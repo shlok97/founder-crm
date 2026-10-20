@@ -9,7 +9,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -e '.[mcp,gmail]'
 python -m unittest discover -s tests -v
-node --check founder_crm/static/app.js
+node --check loop_crm/static/app.js
 ```
 
 Explain what changed and the check that demonstrates it. Schema changes need both fresh-database and populated-database upgrade coverage. Do not commit local databases, tokens, `.env` files or real messages. See [architecture](docs/architecture.md) and [the reviewed personalisation example](docs/personalisation-test.md).

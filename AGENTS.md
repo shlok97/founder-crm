@@ -1,4 +1,4 @@
-# Founder CRM
+# Loop CRM
 
 Read README.md and docs/architecture.md before changing workflow behavior. This is an independent, local-first starter. Never import data, credentials or private configuration from sibling repositories.
 

@@ -22,11 +22,11 @@ PATTERNS = {
 def private_terms():
     """Names and emails from your own CRM database, to keep out of the public repo.
 
-    Opt in per clone: git config founder-crm.privateDb /absolute/path/to/crm.db
+    Opt in per clone: git config loop-crm.privateDb /absolute/path/to/crm.db
     Internal accounts (your own team) are skipped; names shorter than five
     characters are too likely to match ordinary words."""
     try:
-        path = subprocess.run(["git", "config", "--get", "founder-crm.privateDb"], cwd=ROOT,
+        path = subprocess.run(["git", "config", "--get", "loop-crm.privateDb"], cwd=ROOT,
                               capture_output=True, text=True).stdout.strip()
     except OSError:
         return None
@@ -35,7 +35,7 @@ def private_terms():
     import sqlite3
 
     if not Path(path).is_file():
-        raise SystemExit(f"founder-crm.privateDb is set but {path} does not exist.")
+        raise SystemExit(f"loop-crm.privateDb is set but {path} does not exist.")
     c = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
     rows = c.execute(
         "SELECT a.name FROM accounts a WHERE a.lifecycle<>'internal'"

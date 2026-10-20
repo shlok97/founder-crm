@@ -47,12 +47,12 @@ def main():
     ensure_python()
     root = Path(__file__).resolve().parents[1]
     sys.path.insert(0, str(root))
-    from founder_crm.core import Store, CRMError
-    from founder_crm.demo import seed_demo
-    from founder_crm.web import serve
+    from loop_crm.core import Store, CRMError
+    from loop_crm.demo import seed_demo
+    from loop_crm.web import serve
 
     parser = argparse.ArgumentParser(
-        description="Open Founder CRM locally. Defaults to a fictional demo."
+        description="Open Loop CRM locally. Defaults to a fictional demo."
     )
     parser.add_argument(
         "--empty",
@@ -75,7 +75,7 @@ def main():
         else:
             store.init()
         print(
-            "Founder CRM by Altys · "
+            "Loop CRM by Altys · "
             + ("personal workspace" if args.empty else "demo workspace"),
             flush=True,
         )

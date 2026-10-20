@@ -1,6 +1,6 @@
 # A real personalisation test
 
-> This exercise ran against version 0.1.1. From 0.2 an account owner is a built-in field, so the patch below no longer applies to the current code. It is kept as a reviewed example of a Claude Code customisation and of the upgrade defect review caught.
+> This exercise ran against version 0.1.1, when the project was called founder-crm (package `founder_crm`); the commands below use that name. From 0.2 an account owner is a built-in field, so the patch below no longer applies to the current code. It is kept as a reviewed example of a Claude Code customisation and of the upgrade defect review caught.
 
 On 19 October 2026, Claude Code was asked to adapt a source-only copy of this starter for a small design agency. The request was to add an optional account owner, make it editable in the relationship form, expose it in existing MCP reads, and preserve old SQLite records. Only fictional demo/source data was supplied; private Altys records and credentials were excluded.
 

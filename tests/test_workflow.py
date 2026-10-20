@@ -7,10 +7,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from founder_crm.core import Store, CRMError
-from founder_crm.demo import seed_demo
-from founder_crm.integrations import receive_web3forms, sync_gmail
-from founder_crm.judge import judge_proposal
+from loop_crm.core import Store, CRMError
+from loop_crm.demo import seed_demo
+from loop_crm.integrations import receive_web3forms, sync_gmail
+from loop_crm.judge import judge_proposal
 
 
 class WorkflowTests(unittest.TestCase):
@@ -314,7 +314,7 @@ class WorkflowTests(unittest.TestCase):
         p = self.proposal()
         with (
             patch.dict(os.environ, {}, clear=True),
-            patch("founder_crm.judge.urlopen") as network,
+            patch("loop_crm.judge.urlopen") as network,
         ):
             with self.assertRaisesRegex(CRMError, "sharing is off"):
                 judge_proposal(self.store, p)
@@ -386,12 +386,12 @@ class WorkflowTests(unittest.TestCase):
             patch.dict(
                 os.environ,
                 {
-                    "FOUNDER_CRM_ALLOW_MODEL_EGRESS": "1",
-                    "FOUNDER_CRM_JEV_API_KEY": "synthetic-test-key",
-                    "FOUNDER_CRM_JEV_PROVIDER": "typesafe",
+                    "LOOP_CRM_ALLOW_MODEL_EGRESS": "1",
+                    "LOOP_CRM_JEV_API_KEY": "synthetic-test-key",
+                    "LOOP_CRM_JEV_PROVIDER": "typesafe",
                 },
             ),
-            patch("founder_crm.judge.urlopen", side_effect=TimeoutError),
+            patch("loop_crm.judge.urlopen", side_effect=TimeoutError),
         ):
             with self.assertRaisesRegex(CRMError, "unavailable"):
                 judge_proposal(self.store, p)

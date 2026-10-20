@@ -20,7 +20,7 @@ stage only the intended source files. Add new public files to `FILES` in
 
 ```sh
 python -m unittest discover -s tests -v
-node --check founder_crm/static/app.js
+node --check loop_crm/static/app.js
 python scripts/check_public_files.py
 git diff --check
 # git add <explicit source paths>
@@ -40,7 +40,7 @@ Review your diff and keep runtime data under ignored `data/`.
 If you run a real workspace beside this checkout, point the check at it once per clone:
 
 ```sh
-git config founder-crm.privateDb /absolute/path/to/your/crm.db
+git config loop-crm.privateDb /absolute/path/to/your/crm.db
 ```
 
 The check then also refuses any public file or outgoing commit that contains one of
@@ -53,5 +53,5 @@ the browser JavaScript. Check that the run is green before announcing an
 update. Never force-push to work around an unexpected remote change.
 
 The source ZIP is optional: `python scripts/package_release.py`. Its allowlist is
-separate from Python packaging; the wheel contains only `founder_crm` and its
+separate from Python packaging; the wheel contains only `loop_crm` and its
 runtime resources. Databases and credentials belong in neither archive.

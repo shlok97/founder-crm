@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 
-from founder_crm.core import Store
+from loop_crm.core import Store
 
 
 @unittest.skipUnless(
@@ -24,8 +24,8 @@ class MCPTests(unittest.IsolatedAsyncioTestCase):
             account = store.add_account("MCP Example", "prospect")["id"]
             params = StdioServerParameters(
                 command=sys.executable,
-                args=["-m", "founder_crm", "--db", str(db), "mcp"],
-                env={**os.environ, "FOUNDER_CRM_ALLOW_MODEL_EGRESS": "0"},
+                args=["-m", "loop_crm", "--db", str(db), "mcp"],
+                env={**os.environ, "LOOP_CRM_ALLOW_MODEL_EGRESS": "0"},
             )
             async with stdio_client(params) as (reader, writer):
                 async with ClientSession(reader, writer) as session:

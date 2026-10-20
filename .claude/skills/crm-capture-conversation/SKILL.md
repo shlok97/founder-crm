@@ -1,6 +1,6 @@
 ---
 name: crm-capture-conversation
-description: Capture founder-provided call or meeting notes into Founder CRM and propose supported next steps. Use when logging an actual conversation or importing a note; do not invent interactions.
+description: Capture founder-provided call or meeting notes into Loop CRM and propose supported next steps. Use when logging an actual conversation or importing a note; do not invent interactions.
 ---
 
 Use `crm_intake_note` with a stable, user-meaningful external ID for the conversation. Reuse that ID on a retry; do not manufacture a fresh ID to bypass duplicate detection. Record what the user actually provided, separating their statement from your inference.

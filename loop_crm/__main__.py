@@ -248,10 +248,10 @@ WORKFLOW = {
 
 def main():
     p = argparse.ArgumentParser(
-        description="Founder CRM: local startup relationships, promises and evidence."
+        description="Loop CRM: local startup relationships, promises and evidence."
     )
     p.add_argument(
-        "--db", help="SQLite path; defaults to FOUNDER_CRM_DB or data/crm.db"
+        "--db", help="SQLite path; defaults to LOOP_CRM_DB or data/crm.db"
     )
     sub = p.add_subparsers(dest="command", required=True)
     for name in ["init", "demo", "dashboard", "mcp"]:
