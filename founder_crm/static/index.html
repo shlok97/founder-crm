@@ -8,75 +8,56 @@
     <link rel="stylesheet" href="/style.css" />
   </head>
   <body>
+    <header class="topbar">
+      <a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span>founder<b>/</b>crm</a>
+      <div class="topbar-meta">
+        <span id="workspace-label">Your workspace</span>
+        <span id="today-date"></span>
+      </div>
+      <button id="new-note" class="button primary">Capture a note</button>
+    </header>
+    <div id="demo-banner" class="demo-banner" hidden>
+      Demo workspace. Every name and conversation here is fictional.
+    </div>
     <div class="app">
       <aside class="rail">
-        <a class="brand" href="/">founder<span>/</span>crm</a>
-        <div class="rail-caption">SMALL TEAM. LONG MEMORY.</div>
         <nav aria-label="Main navigation">
-          <button data-view="today" class="active">01 <span>Today</span></button
-          ><button data-view="inbox">
-            02 <span>Intake</span><b id="intake-count"></b></button
-          ><button data-view="review">
-            03 <span>Review</span><b id="review-count"></b></button
-          ><button data-view="people">04 <span>Relationships</span></button
-          ><button data-view="pipeline">05 <span>Pipeline</span></button
-          ><button data-view="tickets">
-            06 <span>Tickets</span><b id="untold-count"></b></button
-          ><button data-view="qualify">07 <span>Qualification</span></button
-          ><button data-view="integrations">08 <span>Connections</span></button
-          ><button data-view="yours">09 <span>Make it yours</span></button>
+          <button data-view="today" class="active"><span>Dashboard</span><b id="open-count"></b></button
+          ><button data-view="tickets"><span>Tickets</span><b id="untold-count" title="Fixed, customer not told yet"></b></button
+          ><button data-view="people"><span>Relationships</span></button
+          ><button data-view="pipeline"><span>Pipeline</span></button
+          ><button data-view="qualify"><span>Qualification</span></button
+          ><button data-view="inbox"><span>Intake</span><b id="intake-count"></b></button
+          ><button data-view="review"><span>Review</span><b id="review-count"></b></button
+          ><button data-view="integrations"><span>Integrations</span></button
+          ><button data-view="yours"><span>Make it yours</span></button>
         </nav>
         <div class="rail-bottom">
-          <span class="status-dot"></span> Local SQLite<br /><button
-            id="claude-help"
-            class="text-button"
-          >
-            Use with Claude ↗
-          </button>
-          <p>No outbound messages.<br />Stored locally.</p>
+          <p><span class="status-dot"></span>Stored locally in SQLite</p>
+          <p>Nothing is sent anywhere unless you connect it.</p>
+          <button id="claude-help" class="text-button">Use with Claude</button>
         </div>
       </aside>
       <main>
-        <header class="topbar">
-          <span id="workspace-label">YOUR WORKSPACE</span
-          ><span id="today-date"></span
-          ><button id="new-note" class="button primary">
-            + Capture a note
-          </button>
-        </header>
-        <div id="demo-banner" class="demo-banner" hidden>
-          DEMO WORKSPACE
-          <span>Every name and conversation here is fictional.</span>
-        </div>
-        <section class="page-head">
-          <div>
-            <div id="eyebrow" class="eyebrow">YOUR NEXT MOVES</div>
-            <h1 id="page-title">Keep the promises.</h1>
-            <p id="page-description">
-              The replies, next steps, and updates that deserve your attention.
-            </p>
+        <section class="frame">
+          <div class="page-head">
+            <div>
+              <div id="eyebrow" class="eyebrow"></div>
+              <h1 id="page-title"></h1>
+              <p id="page-description"></p>
+            </div>
+            <button id="new-account" class="button">Add a relationship</button>
           </div>
-          <button id="new-account" class="button">+ Add a relationship</button>
+          <section id="stats" class="stats" aria-label="Workspace counts"></section>
+          <section id="content" aria-live="polite"></section>
         </section>
-        <section
-          id="stats"
-          class="stats"
-          aria-label="Workspace counts"
-        ></section>
-        <section id="content" aria-live="polite"></section>
-        <footer>
-          Built for the first customers, the next conversation, and the promises
-          in between.
-        </footer>
       </main>
     </div>
     <div id="toast" role="status" hidden></div>
     <dialog id="dialog">
       <div class="dialog-head">
         <h2 id="dialog-title"></h2>
-        <button id="close-dialog" class="icon-button" aria-label="Close dialog">
-          ×
-        </button>
+        <button id="close-dialog" class="icon-button" aria-label="Close dialog">×</button>
       </div>
       <div id="dialog-body"></div>
     </dialog>

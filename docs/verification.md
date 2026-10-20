@@ -1,5 +1,9 @@
 # Verification · 19 October 2026
 
+## Version 0.3 (light redesign)
+
+The dashboard is light, with plain page names (Dashboard, Tickets, Relationships, Pipeline, Qualification, Intake, Review, Integrations, Make it yours). The dashboard lists open tickets by date with a one-click Done and an Undo; Make it yours is a seven-step setup. 53 tests pass, including the new check that undoing a close restores the ticket's earlier state. Checked in a browser on fictional demo data at 1440px and 375px wide, with no console errors and no horizontal scroll.
+
 ## Version 0.2 (schema v2)
 
 52 tests pass, including a v1-to-v2 upgrade of a populated database (rows, values and references kept, backup written, second run a no-op), the ticket fix/close/told loop with attested and Gmail-verified notifications, qualification completeness with custom questions, and custom-field type checks. A v1 demo database built from 0.1.1 upgraded with identical row counts per table. The dashboard's Tickets, Qualification and Make it yours views were exercised in a browser on fictional demo data with no console errors.

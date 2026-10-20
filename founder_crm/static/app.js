@@ -40,15 +40,37 @@ const api = async (path, data) => {
   if (!r.ok) throw new Error(body.error || "Request failed");
   return body;
 };
-function toast(message, error = false) {
+function toast(message, error = false, action = null) {
   const e = $("#toast");
   if ($("#dialog").open) $("#dialog").append(e);
   else document.body.append(e);
-  e.textContent = message;
+  e.replaceChildren(node("span", "", message));
+  if (action)
+    e.append(
+      button(action.label, async () => {
+        e.hidden = true;
+        await action.run();
+      }, ""),
+    );
   e.className = error ? "error" : "";
   e.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (e.hidden = true), 7000);
+  toastTimer = setTimeout(() => (e.hidden = true), action ? 9000 : 6000);
+}
+const SEVERITY_TONE = { blocker: "coral", high: "butter", normal: "lavender", low: "gray" };
+const sevTag = (s) => tag(s, SEVERITY_TONE[s] || "gray");
+const CLOSED = ["closed", "wont_do", "duplicate"];
+function todayISO() {
+  const now = new Date();
+  return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, "0"), String(now.getDate()).padStart(2, "0")].join("-");
+}
+function ticketDate(t) {
+  return (t.next_action_date || t.reported_at || t.created_at || "").slice(0, 10);
+}
+function openTickets() {
+  return state.tickets
+    .filter((t) => !CLOSED.includes(t.status))
+    .sort((a, b) => ticketDate(a).localeCompare(ticketDate(b)) || a.id - b.id);
 }
 function open(title) {
   $("#dialog-title").textContent = title;
@@ -116,51 +138,15 @@ function targetName(payload) {
   return accountName(id);
 }
 const heads = {
-  today: [
-    "YOUR NEXT MOVES",
-    "Keep the promises.",
-    "The replies, next steps, and updates that deserve your attention.",
-  ],
-  inbox: [
-    "CONVERSATIONS. ONE HISTORY.",
-    "Start with the evidence.",
-    "Emails, website enquiries, and the notes you bring from conversations.",
-  ],
-  review: [
-    "THE SPACE BEFORE SAVE",
-    "A second look.",
-    "Inspect the source and the proposed update. Jev can advise; you decide.",
-  ],
-  people: [
-    "PEOPLE BEFORE PIPELINES",
-    "Know who you know.",
-    "A customer, an investor, and a vendor need different next steps.",
-  ],
-  pipeline: [
-    "CUSTOMER OPPORTUNITIES",
-    "What’s moving forward?",
-    "Sales opportunities stay separate from your other relationships.",
-  ],
-  tickets: [
-    "WHAT CUSTOMERS ARE WAITING ON",
-    "Close every loop.",
-    "A ticket stays open until it is fixed, and a fix is not delivered until the customer is told.",
-  ],
-  qualify: [
-    "QUALIFICATION",
-    "Who can buy, and why?",
-    "The questions that decide whether an account can and will buy. Every claim keeps its source.",
-  ],
-  yours: [
-    "MAKE IT YOURS",
-    "Shape it to your business.",
-    "Add your own fields without a schema change, or ask Claude to change the app itself.",
-  ],
-  integrations: [
-    "BRING YOUR OWN TOOLS",
-    "Connect the useful bits.",
-    "The app works locally. Connect external services only when you need them.",
-  ],
+  today: ["Open tickets, oldest date first", "Dashboard", "What customers are still waiting on. Mark a ticket done when it is fixed; you can tell them from Tickets."],
+  tickets: ["Reported, fixed, told", "Tickets", "Every customer report stays here until it is fixed, closed and the customer has heard about it."],
+  people: ["Customers, investors, partners", "Relationships", "Everyone you work with, kept apart by what the relationship is for."],
+  pipeline: ["Customer opportunities", "Pipeline", "Deals with prospects and customers, by stage."],
+  qualify: ["Who can buy, and why", "Qualification", "The questions that decide whether an account can and will buy. Each answer keeps its source."],
+  inbox: ["Emails, forms and notes", "Intake", "Conversations that came in. Turn one into a ticket, a follow-up or a timeline entry."],
+  review: ["Proposed updates", "Review", "Updates suggested from email, forms or Claude wait here until you approve them."],
+  integrations: ["Gmail, forms, Claude, Jev", "Integrations", "Optional services. The CRM works without any of them."],
+  yours: ["A step-by-step setup", "Make it yours", "Use Claude Code or Codex to fit this CRM to your company: your old data, your channels, your fields."],
 };
 async function refresh() {
   state = await api("dashboard");
@@ -172,10 +158,9 @@ function render() {
   $("#page-title").textContent = h[1];
   $("#page-description").textContent = h[2];
   $("#demo-banner").hidden = !state.demo;
-  $("#workspace-label").textContent = state.demo
-    ? "DEMO / FICTIONAL RECORDS"
-    : "YOUR WORKSPACE";
+  $("#workspace-label").textContent = state.demo ? "Demo workspace" : "Your workspace";
   $("#intake-count").textContent = state.intake.length || "";
+  $("#open-count").textContent = openTickets().length || "";
   $("#review-count").textContent = state.proposals.length || "";
   $("#untold-count").textContent = state.untold.length || "";
   document
@@ -183,11 +168,14 @@ function render() {
     .forEach((e) => e.classList.toggle("active", e.dataset.view === view));
   const stats = $("#stats");
   stats.replaceChildren();
+  stats.hidden = view !== "today";
+  $("#new-account").hidden = !["today", "people", "pipeline"].includes(view);
+  const overdue = openTickets().filter((t) => t.next_action_date && t.next_action_date < todayISO()).length;
   for (const [value, title] of [
-    [state.tasks.length, "Open next steps"],
-    [state.proposals.length, "Updates to review"],
-    [state.counts.contacts, "People in the story"],
-    [state.untold.length, "Fixed, update still owed"],
+    [openTickets().length, "Open tickets"],
+    [overdue, "Past their date"],
+    [state.untold.length, "Fixed, not told"],
+    [state.accounts.length, "Relationships"],
   ]) {
     add(
       stats,
@@ -213,92 +201,54 @@ function render() {
   })[view](c);
 }
 function renderToday(c) {
-  const cols = node("div", "two-col"),
-    left = node("div"),
-    right = node("div");
-  label(left, "FOLLOW THROUGH", `${state.tasks.length} OPEN`);
-  if (!state.tasks.length)
-    empty(
-      left,
-      "Nothing is waiting here.",
-      "Capture a note or ask Claude to propose a next step.",
+  const open = openTickets(),
+    today = todayISO();
+  const top = label(c, "Open tickets", `${open.length}`);
+  top.append(button("New ticket", () => ticketForm(), "button small"));
+  if (!open.length) empty(c, "Nothing is open.", "When a customer reports something, log it as a ticket so it cannot slip.");
+  for (const t of open) {
+    const date = ticketDate(t);
+    const due = node("span", "due" + (t.next_action_date && t.next_action_date < today ? " late" : "") + (date ? "" : " none"), date || "No date");
+    const r = row(
+      c,
+      `#${t.id} ${t.title}`,
+      [t.account_name, t.status.replaceAll("_", " "), t.next_action].filter(Boolean).join(" · "),
+      button("Done", () => markDone(t), "button small done"),
+      sevTag(t.severity),
     );
-  const now = new Date(),
-    today = [
-      now.getFullYear(),
-      String(now.getMonth() + 1).padStart(2, "0"),
-      String(now.getDate()).padStart(2, "0"),
-    ].join("-");
-  for (const task of state.tasks) {
-    const due = node(
-      "span",
-      "due" + (task.due_date && task.due_date < today ? " late" : ""),
-      task.due_date || "No date",
-    );
-    row(
-      left,
-      task.title,
-      task.account_name,
-      button("Done", async () => {
-        await api("complete-task", { id: task.id });
-        await refresh();
-        toast("Next step completed.");
-      }),
-      due,
-    );
+    r.prepend(due);
+    r.querySelector(".row-title").style.cursor = "pointer";
+    r.querySelector(".row-title").onclick = () => ticketDialog(t.id);
   }
-  const dated = state.followups.filter((f) => f.kind !== "task");
-  label(left, "DATED NEXT STEPS", `${dated.length}`);
-  if (!dated.length) empty(left, "No dated next steps on relationships, deals or tickets.");
-  for (const f of dated.slice(0, 25)) {
-    const due = node(
-      "span",
-      "due" + (f.due && f.due < today ? " late" : ""),
-      f.due || "No date",
-    );
-    const r = row(left, f.next_action || f.what, `${f.account_name} · ${f.what}`, null, due);
-    r.prepend(tag(f.kind, "gray"));
+  if (state.tasks.length) {
+    label(c, "Follow-ups", `${state.tasks.length}`);
+    for (const task of state.tasks) {
+      const due = node("span", "due" + (task.due_date && task.due_date < today ? " late" : ""), task.due_date || "No date");
+      const r = row(
+        c,
+        task.title,
+        task.account_name,
+        button("Done", async () => {
+          await api("complete-task", { id: task.id });
+          await refresh();
+          toast("Follow-up done.");
+        }, "button small done"),
+      );
+      r.prepend(due);
+    }
   }
-  label(left, "CLOSE THE LOOP");
-  if (!state.untold.length)
-    empty(left, "No recorded fixes are waiting for a client update.");
-  for (const t of state.untold)
-    row(
-      left,
-      t.title,
-      `${t.account_name} · ${t.resolution || t.status}`,
-      button("Record update", () => notifyForm(t)),
-      tag("UPDATE OWED", "amber"),
-    );
-  label(right, "HOW A MEMORY BECOMES AN UPDATE");
-  const panel = node("div", "panel");
-  add(
-    panel,
-    node("div", "eyebrow", "EVIDENCE → PROPOSAL → REVIEW"),
-    node("h2", "", "A fix is not a notification."),
-    node(
-      "p",
-      "",
-      "Keep the customer conversation attached to the record. A shipped fix stays separate from evidence that someone was told.",
-    ),
-    button("See the review queue", () => {
-      view = "review";
-      render();
-    }),
-  );
-  right.append(panel);
-  label(right, "RECENT RECORDS");
-  for (const a of state.audit.slice(0, 5)) {
-    const e = node("div", "activity");
-    add(
-      e,
-      node("strong", "", `${a.actor} · ${a.action.replaceAll("_", " ")}`),
-      node("p", "", `${a.object_type} #${a.object_id} · ${a.created_at}`),
-    );
-    right.append(e);
-  }
-  add(cols, left, right);
-  c.append(cols);
+}
+async function markDone(t) {
+  await api("ticket-status", { id: t.id, status: "closed" });
+  await refresh();
+  toast(`Closed #${t.id}. Tell the customer from Tickets.`, false, {
+    label: "Undo",
+    run: async () => {
+      await api("ticket-status", { id: t.id, status: t.status });
+      await refresh();
+      toast(`#${t.id} is open again.`);
+    },
+  });
 }
 function flow(c) {
   const f = node("div", "flow");
@@ -317,7 +267,7 @@ function flow(c) {
 }
 function renderInbox(c) {
   flow(c);
-  label(c, "RECENT INTAKE", `${state.intake.length} SHOWN`);
+  label(c, "Recent intake", `${state.intake.length} SHOWN`);
   if (!state.intake.length)
     empty(
       c,
@@ -345,7 +295,7 @@ function inspectIntake(i) {
     ),
     node("div", "evidence", i.body),
   );
-  label(p, "PROPOSE A NEXT STEP");
+  label(p, "Propose a next step");
   const action = select(p, "Type of update", [
     ["create_task", "Create a follow-up"],
     ["log_interaction", "Record an interaction"],
@@ -380,12 +330,12 @@ function inspectIntake(i) {
 }
 function renderReview(c) {
   flow(c);
-  label(c, "PENDING UPDATES", `${state.proposals.length} TO REVIEW`);
+  label(c, "Pending updates", `${state.proposals.length} TO REVIEW`);
   if (!state.proposals.length)
     empty(c, "All proposed updates have been reviewed.");
   for (const p of state.proposals) {
     const payload = JSON.parse(p.payload),
-      status = p.verdict || "NOT JUDGED";
+      status = p.verdict || "not judged";
     const r = row(
       c,
       payload.title || payload.summary || p.action.replaceAll("_", " "),
@@ -415,9 +365,9 @@ async function inspectProposal(id) {
       `Proposal #${id} · ${data.action.replaceAll("_", " ")} · ${data.created_by}`,
     ),
   );
-  label(p, "SOURCE EVIDENCE");
+  label(p, "Source evidence");
   add(p, node("div", "evidence", data.context.source_evidence.body));
-  label(p, "KNOWN RELATIONSHIP");
+  label(p, "Known relationship");
   p.append(
     node(
       "p",
@@ -428,7 +378,7 @@ async function inspectProposal(id) {
     ),
   );
   if (data.context.target_record) {
-    label(p, "TARGET RECORD");
+    label(p, "Target record");
     const t = data.context.target_record,
       r = t.record,
       a = data.context.target_account;
@@ -443,11 +393,11 @@ async function inspectProposal(id) {
     );
   }
   if (data.context.recent_interactions.length) {
-    label(p, "RECENT HISTORY SHARED WITH JEV");
+    label(p, "Recent history shared with jev");
     for (const i of data.context.recent_interactions)
       row(p, i.summary, `${i.direction} · ${i.created_at}`);
   }
-  label(p, "PROPOSED WRITE");
+  label(p, "Proposed write");
   p.append(node("pre", "", JSON.stringify(data.payload, null, 2)));
   if (data.judgments.length) {
     const j = data.judgments[0];
@@ -577,9 +527,9 @@ async function history(id) {
     ...Object.entries(a.custom).map(([k, v]) => [fieldLabel("account", k), v]),
   ]);
   const q = a.qualification.status;
-  label(p, "QUALIFICATION", `${q.pct}% · ${q.status.replace("_", " ")}`);
+  label(p, "Qualification", `${q.pct}% · ${q.status.replace("_", " ")}`);
   p.append(button("Open qualification", () => qualifyDialog(id)));
-  label(p, "CONTACTS");
+  label(p, "Contacts");
   for (const person of a.contacts)
     row(
       p,
@@ -587,17 +537,17 @@ async function history(id) {
       [person.title, person.email, person.phone || person.whatsapp].filter(Boolean).join(" · ") ||
         "No email recorded",
     );
-  p.append(button("+ Add contact", () => contactForm(id)));
-  label(p, "TICKETS", `${a.tickets.length}`);
+  p.append(button("Add contact", () => contactForm(id)));
+  label(p, "Tickets", `${a.tickets.length}`);
   for (const t of a.tickets)
     row(p, `#${t.id} ${t.title}`, `${t.severity} · ${t.status}${t.notified_at ? " · customer told" : ""}`, button("Open", () => ticketDialog(t.id)));
-  p.append(button("+ New ticket", () => ticketForm(id)));
+  p.append(button("New ticket", () => ticketForm(id)));
   if (a.opportunities.length) {
-    label(p, "OPPORTUNITIES");
+    label(p, "Opportunities");
     for (const o of a.opportunities)
       row(p, o.title, [o.stage, o.value && `${o.value} ${o.currency || ""}`, o.next_action].filter(Boolean).join(" · "));
   }
-  label(p, "RELATIONSHIP HISTORY");
+  label(p, "Relationship history");
   if (!a.interactions.length) empty(p, "No interactions recorded yet.");
   for (const i of a.interactions)
     row(
@@ -607,7 +557,7 @@ async function history(id) {
         .filter(Boolean)
         .join(" · "),
     );
-  label(p, "NEXT STEPS");
+  label(p, "Next steps");
   for (const t of a.tasks)
     row(p, t.title, `${t.status} · ${t.due_date || "No date"}`);
 }
@@ -616,9 +566,9 @@ function choices(values) {
 }
 const CHANNELS = ["whatsapp", "email", "call", "in_person", "video", "linkedin", "app", "chat", "sms", "internal", "other"];
 function renderTickets(c) {
-  const top = label(c, "OPEN TICKETS", "WORST FIRST");
-  top.append(button("+ New ticket", () => ticketForm()));
-  const open = state.tickets.filter((t) => !["closed", "wont_do", "duplicate"].includes(t.status));
+  const top = label(c, "Open tickets", "oldest date first");
+  top.append(button("New ticket", () => ticketForm(), "button small"));
+  const open = openTickets();
   if (!open.length) empty(c, "No open tickets.", "Log what a customer reports so it cannot slip.");
   for (const t of open) {
     const r = row(
@@ -628,12 +578,12 @@ function renderTickets(c) {
       button("Open", () => ticketDialog(t.id)),
       t.next_action_date ? node("span", "due", t.next_action_date) : null,
     );
-    r.prepend(tag(t.severity, ["blocker", "high"].includes(t.severity) ? "amber" : "gray"));
+    r.prepend(sevTag(t.severity));
   }
-  label(c, "FIXED, CUSTOMER NOT TOLD", `${state.untold.length}`);
+  label(c, "Fixed, customer not told", `${state.untold.length}`);
   if (!state.untold.length) empty(c, "Every fix has been told to its customer.");
   for (const t of state.untold)
-    row(c, `#${t.id} ${t.title}`, `${t.account_name} · ${t.resolution || t.status}`, button("Record update", () => notifyForm(t)), tag("UPDATE OWED", "amber"));
+    row(c, `#${t.id} ${t.title}`, `${t.account_name} · ${t.resolution || t.status}`, button("Record update", () => notifyForm(t)), tag("tell them", "coral"));
 }
 function ticketForm(accountId) {
   const p = open("Log a customer ticket");
@@ -673,7 +623,7 @@ function ticketForm(accountId) {
 async function ticketDialog(id) {
   const t = await api("tickets/" + id),
     p = open(`Ticket #${id}`);
-  add(p, tag(t.severity, ["blocker", "high"].includes(t.severity) ? "amber" : "gray"), tag(t.status.replaceAll("_", " "), "gray"), node("h3", "", t.title));
+  add(p, sevTag(t.severity), node("span", "", " "), tag(t.status.replaceAll("_", " "), "gray"), node("h3", "", t.title));
   details(p, [
     ["Relationship", t.account_name],
     ["Kind", t.kind],
@@ -693,10 +643,10 @@ async function ticketDialog(id) {
     ...Object.entries(t.custom).map(([k, v]) => [fieldLabel("ticket", k), v]),
   ]);
   if (t.body) {
-    label(p, "WHAT THEY SAID");
+    label(p, "What they said");
     p.append(node("div", "evidence", t.body));
   }
-  label(p, "MOVE IT ALONG");
+  label(p, "Move it along");
   const status = select(p, "Status", choices(["open", "triaged", "in_progress", "waiting_on_client", "fixed", "closed", "wont_do", "duplicate"]));
   status.value = t.status;
   const resolution = field(p, "Resolution, in the customer's words", "text", t.resolution || ""),
@@ -747,7 +697,7 @@ function notifyForm(t) {
   );
 }
 function renderQualify(c) {
-  label(c, "STILL TO QUALIFY", `${state.qualification_gaps.length} BUYERS`);
+  label(c, "Still to qualify", `${state.qualification_gaps.length} BUYERS`);
   if (!state.qualification_gaps.length) empty(c, "Every live buyer is fully qualified.");
   for (const g of state.qualification_gaps) {
     const meter = add(node("div", "meter"), node("span"));
@@ -805,7 +755,7 @@ async function qualifyDialog(id) {
       ),
     ),
   );
-  label(p, "EVIDENCE", `${q.evidence.length}`);
+  label(p, "Evidence", `${q.evidence.length}`);
   if (!q.evidence.length) empty(p, "No evidence recorded.", "A number with no source is a rumour.");
   for (const e of q.evidence) row(p, e.claim, [e.source, e.observed_at, e.url].filter(Boolean).join(" · "));
   const claim = field(p, "Claim"),
@@ -820,42 +770,90 @@ async function qualifyDialog(id) {
     ),
   );
 }
+function snippet(parent, text) {
+  const box = node("div", "snippet");
+  box.append(node("pre", "", text));
+  box.append(
+    button("Copy", async () => {
+      await navigator.clipboard.writeText(text);
+      toast("Copied.");
+    }, "button small copy"),
+  );
+  parent.append(box);
+}
+const JOURNEY = [
+  {
+    title: "Get your own copy",
+    tone: "var(--sage)",
+    text: "Clone the repository and open the folder in Claude Code or Codex. Everything below is a conversation with your coding agent in that folder.",
+    code: "git clone https://github.com/shlok97/founder-crm.git\ncd founder-crm\nclaude        # or: codex",
+  },
+  {
+    title: "Start an empty workspace",
+    tone: "var(--sage)",
+    text: "Your records live in data/crm.db, which Git ignores. The demo stays in data/demo.db.",
+    code: "python3 scripts/start.py --empty",
+  },
+  {
+    title: "Bring what you already have",
+    tone: "var(--lavender)",
+    text: "Tell the agent where your current records are: a spreadsheet, a CRM export, a SQLite or Postgres database, a Notion table. Ask for an import that keeps every field and can be run again safely.",
+    code: "My customer records are in <path or system>: <describe the tables or columns>.\nWrite a script outside this repository that imports them into founder-crm using Store.\nMap each field to a built-in column where one fits. Put everything else in custom fields; do not drop data.\nRecord every source row in import_ids so a re-run updates instead of duplicating.\nThen compare counts per table and show me three records side by side.",
+  },
+  {
+    title: "Connect the channels your customers use",
+    tone: "var(--lavender)",
+    text: "List where customers actually talk to you: email, WhatsApp, Slack, calls, a website form. Gmail and web forms are built in. For anything else, ask for an adapter that brings messages in as evidence and never sends on its own.",
+    code: "Our customers reach us through <email / WhatsApp / Slack channel #... / calls>.\nAdd an opt-in integration for <channel> following the Gmail adapter in founder_crm/integrations.py:\nmessages arrive as intake evidence, nothing is sent automatically, credentials come from the environment.\nAdd tests with synthetic messages.",
+  },
+  {
+    title: "Add the fields only your business needs",
+    tone: "var(--butter)",
+    text: "A licence number, a plan tier, a region. Define them here or from the command line. Mark an account field as a qualification question and it joins the Qualification queue.",
+    code: 'founder-crm field define account plan_tier "Plan tier" --type choice --choices free,team,enterprise --qualification',
+    fields: true,
+  },
+  {
+    title: "Keep your data out of Git",
+    tone: "var(--butter)",
+    text: "If you change the code and push it anywhere, point the publish check at your database once. It then refuses any commit that contains one of your customers' names or emails.",
+    code: "git config founder-crm.privateDb $(pwd)/data/crm.db\ngit config core.hooksPath .githooks",
+  },
+  {
+    title: "Make it part of your day",
+    tone: "var(--coral)",
+    text: "Open the dashboard each morning, and connect Claude so it can read the CRM and propose updates. Approval always stays with you.",
+    code: 'founder-crm serve\nclaude mcp add --transport stdio founder-crm -- "$(pwd)/.venv/bin/founder-crm" --db "$(pwd)/data/crm.db" mcp',
+  },
+];
 function renderYours(c) {
-  const cols = node("div", "two-col"),
-    left = node("div"),
-    right = node("div");
-  label(left, "YOUR FIELDS", `${state.fields.length} DEFINED`);
-  left.append(node("p", "hint", "Custom fields hold the data only your business needs, on relationships, contacts, opportunities, tickets, interactions or events. Mark an account field as a qualification question and it counts toward the Qualification queue."));
-  if (!state.fields.length) empty(left, "No custom fields yet.");
-  for (const f of state.fields) {
-    const r = row(left, f.label, `${f.object_type}.${f.key} · ${f.type}${f.choices ? " (" + f.choices.join(", ") + ")" : ""} · ${f.used} value${f.used === 1 ? "" : "s"}`);
-    r.prepend(tag(f.qualification ? "QUALIFICATION" : f.object_type, f.qualification ? "" : "gray"));
-  }
-  left.append(button("+ Define a field", fieldForm, "button primary"));
-  label(right, "HOW TO MAKE IT YOURS");
-  const panel = node("div", "panel");
-  const steps = node("ol", "steps");
-  for (const s of [
-    "Add a custom field here for anything your business tracks that others would not: a licence number, a plan tier, a region code.",
-    "Mark the account fields that decide whether someone can buy as qualification questions.",
-    "Use the CLI the same way: founder-crm field define account plan_tier \"Plan tier\" --type choice --choices free,team,enterprise",
-    "For a change to the app itself (a new view, a new rule, your own labels), open this folder in Claude Code and describe one concrete change. Keep human review and add tests.",
-    "Back up data/ before a schema change. Upgrades keep every row and write a backup first.",
-  ])
-    steps.append(node("li", "", s));
-  add(panel, node("div", "eyebrow", "FIELDS → QUESTIONS → CODE"), node("h2", "", "Start with data, then change the code."), steps);
-  right.append(panel);
-  label(right, "WHERE CHANGES BELONG");
-  details(right, [
-    ["Labels, layout, colours", "founder_crm/static/"],
-    ["A built-in field", "schema.sql + Store.init upgrade + core.py"],
-    ["A workflow or rule", "core.py, with a test in tests/"],
-    ["How Claude operates", ".claude/skills/ and CLAUDE.md"],
-    ["Guide", "docs/personalise.md"],
-  ]);
-  right.append(node("p", "hint", `Schema version ${state.schema_version}.`));
-  add(cols, left, right);
-  c.append(cols);
+  label(c, "Setup", `${JOURNEY.length} steps`);
+  const list = node("ol", "journey");
+  JOURNEY.forEach((step, i) => {
+    const li = node("li"),
+      no = node("div", "step-no", `Step ${i + 1}`),
+      body = node("div");
+    const swatch = node("b");
+    swatch.style.setProperty("--tone", step.tone);
+    no.append(swatch);
+    add(body, node("h3", "", step.title), node("p", "", step.text));
+    snippet(body, step.code);
+    if (step.fields) {
+      const box = node("div");
+      box.style.marginTop = "18px";
+      if (!state.fields.length) box.append(node("p", "hint", "No custom fields yet."));
+      for (const f of state.fields) {
+        const r = row(box, f.label, `${f.object_type}.${f.key} · ${f.type}${f.choices ? " (" + f.choices.join(", ") + ")" : ""} · ${f.used} value${f.used === 1 ? "" : "s"}`);
+        r.prepend(tag(f.qualification ? "qualification" : f.object_type, f.qualification ? "lavender" : "gray"));
+      }
+      box.append(add(node("div", "actions left"), button("Define a field", fieldForm, "button")));
+      body.append(box);
+    }
+    add(li, no, body);
+    list.append(li);
+  });
+  c.append(list);
+  c.append(node("p", "hint", `Schema version ${state.schema_version}. Upgrades keep every row and write a backup first. More prompts: docs/personalise.md.`));
 }
 function fieldForm() {
   const p = open("Define a custom field");
@@ -887,8 +885,8 @@ function fieldForm() {
   );
 }
 function renderPipeline(c) {
-  const top = label(c, "CUSTOMER PIPELINE");
-  top.append(button("+ Add opportunity", opportunityForm));
+  const top = label(c, "Customer pipeline");
+  top.append(button("Add opportunity", opportunityForm));
   const lanes = node("div", "pipeline");
   for (const stage of [
     "discovery",
@@ -924,21 +922,21 @@ function renderConnections(c) {
   for (const [title, status, desc, fn] of [
     [
       "Claude MCP",
-      "LOCAL TOOLS",
+      "local tools",
       "Read the CRM, capture notes and stage updates. Approval stays in this dashboard.",
       claudeHelp,
     ],
     [
       "Gmail",
-      state.integrations.gmail_configured ? "CONFIGURED" : "NOT CONNECTED",
+      state.integrations.gmail_configured ? "configured" : "not connected",
       "A bounded read-only pull. No labels, read status, archives, attachments or outgoing mail.",
       gmailForm,
     ],
     [
       "Web3Forms",
       state.integrations.forms_configured
-        ? "RECEIVER CONFIGURED"
-        : "NOT CONNECTED",
+        ? "receiver configured"
+        : "not connected",
       "Website submissions become source evidence. A form does not create or promote a relationship on its own.",
       () => {
         const p = open("Web3Forms setup");
@@ -955,9 +953,9 @@ function renderConnections(c) {
       "Jev",
       state.integrations.jev_configured
         ? state.integrations.model_sharing
-          ? "ENABLED"
-          : "SHARING OFF"
-        : "NOT CONNECTED",
+          ? "enabled"
+          : "sharing off"
+        : "not connected",
       "Advisory checks on individual proposals. No automatic database writes.",
       () => {
         const p = open("Jev setup");
@@ -978,7 +976,7 @@ function renderConnections(c) {
     ],
   ]) {
     const r = row(c, title, desc, button("Setup", fn));
-    r.prepend(tag(status, status === "NOT CONNECTED" ? "gray" : ""));
+    r.prepend(tag(status, status === "not connected" ? "gray" : ""));
   }
 }
 function noteForm() {

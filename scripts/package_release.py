@@ -63,7 +63,7 @@ FILES = [
 def package():
     dest = ROOT / "dist"
     dest.mkdir(exist_ok=True)
-    archive = dest / "founder-crm-0.2.0.zip"
+    archive = dest / "founder-crm-0.3.0.zip"
     with zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED) as z:
         for name in sorted(FILES):
             source = ROOT / name

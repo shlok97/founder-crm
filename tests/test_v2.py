@@ -77,6 +77,15 @@ class V2Tests(unittest.TestCase):
         self.assertIsNone(reopened["notified_at"])
         self.assertIn("previous", reopened["history"][-1]["detail"])
 
+    def test_undoing_a_close_restores_the_previous_state(self):
+        t = self.store.open_ticket(self.account, "Export 504")["id"]
+        self.store.set_ticket_status(t, "fixed")
+        fixed_at = self.store.ticket(t)["fixed_at"]
+        self.store.set_ticket_status(t, "closed")
+        self.store.set_ticket_status(t, "fixed")
+        ticket = self.store.ticket(t)
+        self.assertEqual((ticket["status"], ticket["closed_at"], ticket["fixed_at"]), ("fixed", None, fixed_at))
+
     def test_ticket_contact_must_belong_to_account(self):
         other = self.store.add_account("Other", "customer")["id"]
         person = self.store.add_contact(other, "Lee", "lee@other.example")["id"]

@@ -793,6 +793,8 @@ class Store:
                 values["fixed_at"] = ticket["fixed_at"] or stamp
             if status in CLOSED_TICKET:
                 values["closed_at"] = ticket["closed_at"] or stamp
+            elif ticket["closed_at"]:
+                values["closed_at"] = None
             if status in OPEN_TICKET and (ticket["closed_at"] or ticket["fixed_at"]):
                 # Reopened: the earlier fix and update no longer describe it. The audit
                 # row keeps what they were.

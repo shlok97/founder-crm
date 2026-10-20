@@ -1,6 +1,6 @@
 # Personalise a copy with Claude
 
-Before changing code, check whether a custom field covers it. Custom fields hold your own data on any record, are type-checked, and can be marked as qualification questions; the dashboard's **Make it yours** view and `founder-crm field define` create them with no schema change. See [Make it yours](../README.md#make-it-yours). Change the code when you need a new rule, a new view, or a field that deserves a column of its own.
+Before changing code, check whether a custom field covers it. Custom fields hold your own data on any record, are type-checked, and can be marked as qualification questions; the app's **Make it yours** view (a step-by-step setup) and `founder-crm field define` create them with no schema change. See [Make it yours](../README.md#make-it-yours). Change the code when you need a new rule, a new view, or a field that deserves a column of its own.
 
 Open your own checkout in Claude Code. Start with the fictional demo before adding real records. The project includes `CLAUDE.md`, operating rules and three skills; use the MCP setup in README when you also want Claude to read or stage updates against the running database.
 

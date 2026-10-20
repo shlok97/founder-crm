@@ -30,21 +30,21 @@ python3 scripts/start.py --empty
 
 Demo records live in `data/demo.db`; your empty workspace uses `data/crm.db`. Both are ignored by Git. Use `--port 4782` if the default port is busy, or `--db path/to/my.db` to choose a different file.
 
-![Working dashboard with fictional records](docs/images/dashboard.jpg)
+![The dashboard: open tickets by date, each one click from done (fictional demo records)](docs/images/dashboard.jpg)
 
 ## What it does
 
 | View | What you can do |
 |---|---|
-| Today | Review next steps, complete follow-ups and find fixes without recorded customer updates |
+| Dashboard | Every open ticket, oldest date first, each one click from done (with undo) |
 | Intake | Capture conversation notes and inspect imported messages or form submissions |
 | Review | Inspect source evidence, target records, proposed changes and optional Jev judgments; approve or reject |
 | Relationships | Keep customers, prospects, investors, partners and vendors distinct; inspect their history |
 | Pipeline | Track customer opportunities from discovery to won, lost or parked, with value, probability and a dated next step |
 | Tickets | Log what a customer reports, move it to fixed and closed, and record when and how you told them |
 | Qualification | Answer whether an account can and will buy, with a source for every claim and a queue of the gaps |
-| Connections | Configure the optional integrations when you need them |
-| Make it yours | Define your own fields on any record and add your own qualification questions |
+| Integrations | Configure Gmail, web forms, Claude and Jev when you need them |
+| Make it yours | A step-by-step setup with Claude Code or Codex: bring your old records, connect your channels, add your own fields |
 
 An investor can need a follow-up without becoming a sales lead. A meeting under discussion is not a booked meeting. A deployed fix is not proof that the customer was told. Those distinctions are part of the model, rather than notes you have to remember.
 
@@ -98,6 +98,8 @@ Use the **same absolute database path** for the dashboard and MCP server. The de
 ## Make it yours
 
 Every business tracks something nobody else does: a licence number, a plan tier, which region a client sits in, an industry-specific qualification question. Founder CRM gives you three levels, and you should reach for them in this order.
+
+The **Make it yours** view in the app walks through this as seven steps, each with a command or a prompt to paste into Claude Code or Codex: get your own copy, start an empty workspace, bring your existing records (spreadsheet, CRM export, database) in without losing a field, connect the channels your customers use (email, WhatsApp, Slack, calls, forms), add your own fields, keep your data out of Git, and make it part of your day.
 
 **1. Custom fields, no code.** Define a field once and it can be set on any relationship, contact, opportunity, ticket, interaction or event. Values are type-checked (text, number, integer, date, boolean, choice, JSON). Use the **Make it yours** view in the dashboard, or:
 
@@ -173,7 +175,7 @@ python -m unittest discover -s tests -v
 node --check founder_crm/static/app.js
 ```
 
-The base suite has **52 tests**, including a v1-to-v2 database upgrade, the ticket fix/close/told loop, qualification completeness with custom questions, and custom-field validation. A real local HTTP/MCP workflow connects form intake, proposal, advisory judgment and human approval in one database. Provider responses are synthetic; the suite does not call Gmail, Web3Forms or Jev. [Release review](docs/release-review.md) and [verification details](docs/verification.md) distinguish installed-package checks from live service tests.
+The base suite has **53 tests**, including a v1-to-v2 database upgrade, the ticket fix/close/told loop, qualification completeness with custom questions, and custom-field validation. A real local HTTP/MCP workflow connects form intake, proposal, advisory judgment and human approval in one database. Provider responses are synthetic; the suite does not call Gmail, Web3Forms or Jev. [Release review](docs/release-review.md) and [verification details](docs/verification.md) distinguish installed-package checks from live service tests.
 
 ## Scope and data
 
